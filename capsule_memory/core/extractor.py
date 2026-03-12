@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass
 from typing import Any
 import litellm
+from capsule_memory.core.llm_utils import sanitize_llm_json
 from capsule_memory.exceptions import ExtractorError
 from capsule_memory.models.memory import ConversationTurn, MemoryFact, MemoryPayload
 
@@ -131,12 +132,7 @@ Return only the JSON array, no other text, code block markers, or explanations:"
                 max_tokens=2000,
             )
             raw = response.choices[0].message.content.strip()
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            raw = raw.strip()
-            data = json.loads(raw)
+            data = sanitize_llm_json(raw)
             facts = []
             for i, item in enumerate(data[:self.config.max_facts]):
                 if not isinstance(item, dict) or "key" not in item:

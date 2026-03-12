@@ -6,6 +6,7 @@ import logging
 import os
 import re
 from abc import ABC, abstractmethod
+from capsule_memory.core.llm_utils import sanitize_llm_json
 from capsule_memory.models.events import SkillDraft, SkillTriggerEvent, SkillTriggerRule
 from capsule_memory.models.memory import ConversationTurn
 
@@ -266,7 +267,7 @@ Return as JSON only, no other text:
                 timeout=3.0,
             )
             raw = response.choices[0].message.content.strip()
-            scores = json.loads(raw)
+            scores = sanitize_llm_json(raw)
             return float(
                 scores.get("generality", 0)
                 + scores.get("reusability", 0)
