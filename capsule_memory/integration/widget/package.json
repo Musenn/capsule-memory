@@ -1,0 +1,13 @@
+{
+  "name": "capsule-memory-widget",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Embeddable Web Widget for CapsuleMemory — capsule list, export, import, and skill trigger notifications",
+  "scripts": {
+    "build": "node build.js",
+    "watch": "node build.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0"
+  }
+}

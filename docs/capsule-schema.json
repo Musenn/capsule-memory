@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Musenn/capsule-memory/blob/main/docs/capsule-schema.json",
+  "title": "CapsuleMemory Capsule Schema",
+  "description": "Official JSON Schema for CapsuleMemory capsule files. Schema version: capsule-schema/1.0+35c1b411",
+  "type": "object",
+  "required": ["capsule_id", "schema_version", "capsule_type", "status", "user_id", "title", "created_at", "updated_at", "lifecycle", "content", "metadata"],
+  "properties": {
+    "capsule_id": {
+      "type": "string",
+      "description": "Unique capsule identifier with namespace-derived prefix",
+      "pattern": "^cap_[a-f0-9]+"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "capsule-schema/1.0+35c1b411",
+      "description": "Schema version with protocol fingerprint suffix"
+    },
+    "capsule_type": {
+      "type": "string",
+      "enum": ["memory", "skill", "hybrid", "context"],
+      "description": "Type of capsule content"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "sealed", "imported", "archived"],
+      "description": "Current lifecycle status"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Owner user identifier"
+    },
+    "agent_id": {
+      "type": ["string", "null"],
+      "description": "Optional agent identifier"
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable capsule title"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "User-defined tags for categorization"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 creation timestamp"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 last update timestamp"
+    },
+    "checksum": {
+      "type": ["string", "null"],
+      "description": "HMAC-SHA256 integrity checksum computed with namespace key"
+    },
+    "lifecycle": {
+      "type": "object",
+      "required": ["origin_session_id", "origin_platform"],
+      "properties": {
+        "origin_session_id": {
+          "type": ["string", "null"],
+          "description": "Session ID that produced this capsule"
+        },
+        "origin_platform": {
+          "type": "string",
+          "default": "unknown",
+          "description": "Platform where the session originated"
+        },
+        "sealed_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the capsule was sealed"
+        },
+        "expires_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Optional expiration timestamp"
+        },
+        "parent_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "IDs of parent capsules (for merge/fork lineage)"
+        },
+        "forked_from": {
+          "type": ["string", "null"],
+          "description": "Capsule ID this was forked from"
+        }
+      }
+    },
+    "content": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": ["string", "null"],
+          "description": "LLM-generated session summary"
+        },
+        "facts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Extracted factual statements"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description", "steps"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "steps": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "code_snippets": {
+                "type": "array",
+                "items": { "type": "string" },
+                "default": []
+              },
+              "tags": {
+                "type": "array",
+                "items": { "type": "string" },
+                "default": []
+              }
+            }
+          },
+          "default": [],
+          "description": "Extracted reusable skills/procedures"
+        },
+        "turns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["role", "content", "timestamp"],
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": ["user", "assistant"]
+              },
+              "content": { "type": "string" },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "tokens": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          },
+          "default": [],
+          "description": "Raw conversation turns"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["capsule_created_by", "capsule_project_url"],
+      "properties": {
+        "capsule_created_by": {
+          "type": "string",
+          "const": "capsule-memory",
+          "description": "Library that created this capsule"
+        },
+        "capsule_project_url": {
+          "type": "string",
+          "const": "https://github.com/Musenn/capsule-memory",
+          "description": "Project repository URL"
+        },
+        "turn_count": {
+          "type": "integer",
+          "default": 0
+        },
+        "total_tokens": {
+          "type": "integer",
+          "default": 0
+        },
+        "extra": {
+          "type": "object",
+          "additionalProperties": true,
+          "default": {},
+          "description": "Arbitrary user-defined metadata"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "capsule_id": "cap_20250310_test001",
+  "capsule_type": "memory",
+  "version": "1.0.0",
+  "schema_version": "capsule-schema/1.0+4240ea9f",
+  "identity": {"user_id": "test_user", "session_id": "sess_test001", "origin_platform": "test"},
+  "lifecycle": {"created_at": "2025-03-10T10:00:00", "status": "sealed", "sealed_at": "2025-03-10T11:00:00"},
+  "metadata": {"tags": ["test"], "title": "Test Capsule", "turn_count": 2},
+  "payload": {
+    "facts": [{"fact_id": "f001", "key": "user.name", "value": "Alice", "confidence": 1.0, "category": "user_preference", "created_at": "2025-03-10T10:00:00"}],
+    "context_summary": "Test capsule",
+    "entities": {"technologies": ["Python"]},
+    "timeline": [],
+    "raw_turns": []
+  },
+  "integrity": {"checksum": "", "encrypted": false, "signed_by": "capsule-memory", "salt": ""}
+}

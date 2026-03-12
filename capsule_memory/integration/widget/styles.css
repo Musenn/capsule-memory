@@ -1,0 +1,769 @@
+/* ─────────────────────────────────────────────────────────────
+   CapsuleMemory Widget — Complete CSS
+   Themes: light (default), dark, auto (follows prefers-color-scheme)
+   ───────────────────────────────────────────────────────────── */
+
+/* ── CSS Custom Properties — Light Theme (default) ──────────── */
+:host,
+.cm-widget {
+  --cm-bg: #ffffff;
+  --cm-bg-secondary: #f5f6f8;
+  --cm-bg-hover: #eef0f4;
+  --cm-text: #1a1a2e;
+  --cm-text-secondary: #6b7280;
+  --cm-border: #e2e4e9;
+  --cm-primary: #4f46e5;
+  --cm-primary-hover: #4338ca;
+  --cm-primary-text: #ffffff;
+  --cm-danger: #dc2626;
+  --cm-danger-hover: #b91c1c;
+  --cm-success: #16a34a;
+  --cm-warning: #f59e0b;
+  --cm-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  --cm-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --cm-radius: 8px;
+  --cm-radius-sm: 4px;
+  --cm-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --cm-font-mono: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+  --cm-transition: 0.2s ease;
+  --cm-overlay: rgba(0, 0, 0, 0.4);
+  --cm-notify-bg: #1e1b4b;
+  --cm-notify-text: #e0e7ff;
+}
+
+/* ── Dark Theme ─────────────────────────────────────────────── */
+.cm-widget[data-theme="dark"] {
+  --cm-bg: #1a1a2e;
+  --cm-bg-secondary: #16162a;
+  --cm-bg-hover: #252547;
+  --cm-text: #e2e8f0;
+  --cm-text-secondary: #94a3b8;
+  --cm-border: #334155;
+  --cm-primary: #818cf8;
+  --cm-primary-hover: #6366f1;
+  --cm-primary-text: #0f0f23;
+  --cm-danger: #f87171;
+  --cm-danger-hover: #ef4444;
+  --cm-success: #4ade80;
+  --cm-warning: #fbbf24;
+  --cm-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --cm-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --cm-overlay: rgba(0, 0, 0, 0.6);
+  --cm-notify-bg: #312e81;
+  --cm-notify-text: #e0e7ff;
+}
+
+/* ── Auto Theme (follows OS preference) ─────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .cm-widget[data-theme="auto"] {
+    --cm-bg: #1a1a2e;
+    --cm-bg-secondary: #16162a;
+    --cm-bg-hover: #252547;
+    --cm-text: #e2e8f0;
+    --cm-text-secondary: #94a3b8;
+    --cm-border: #334155;
+    --cm-primary: #818cf8;
+    --cm-primary-hover: #6366f1;
+    --cm-primary-text: #0f0f23;
+    --cm-danger: #f87171;
+    --cm-danger-hover: #ef4444;
+    --cm-success: #4ade80;
+    --cm-warning: #fbbf24;
+    --cm-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    --cm-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.3);
+    --cm-overlay: rgba(0, 0, 0, 0.6);
+    --cm-notify-bg: #312e81;
+    --cm-notify-text: #e0e7ff;
+  }
+}
+
+/* ── Reset & Base ───────────────────────────────────────────── */
+.cm-widget {
+  all: initial;
+  display: block;
+  font-family: var(--cm-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--cm-text);
+  box-sizing: border-box;
+}
+
+.cm-widget *,
+.cm-widget *::before,
+.cm-widget *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Toggle Button (floating bottom-right launcher) ─────────── */
+.cm-toggle-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999998;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: var(--cm-primary);
+  color: var(--cm-primary-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--cm-shadow);
+  transition: transform var(--cm-transition), background var(--cm-transition);
+  font-size: 22px;
+}
+
+.cm-toggle-btn:hover {
+  background: var(--cm-primary-hover);
+  transform: scale(1.08);
+}
+
+.cm-toggle-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+/* ── Panel (main capsule list drawer) ───────────────────────── */
+.cm-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 999999;
+  width: 420px;
+  max-width: 100vw;
+  height: 100vh;
+  background: var(--cm-bg);
+  box-shadow: var(--cm-shadow);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  overflow: hidden;
+}
+
+.cm-panel.cm-panel--open {
+  transform: translateX(0);
+}
+
+/* ── Panel Header ───────────────────────────────────────────── */
+.cm-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--cm-border);
+  background: var(--cm-bg-secondary);
+  flex-shrink: 0;
+}
+
+.cm-panel-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--cm-text);
+  margin: 0;
+}
+
+.cm-panel-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Generic Button Styles ──────────────────────────────────── */
+.cm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--cm-border);
+  border-radius: var(--cm-radius-sm);
+  background: var(--cm-bg);
+  color: var(--cm-text);
+  font-size: 13px;
+  font-family: var(--cm-font);
+  cursor: pointer;
+  transition: background var(--cm-transition), border-color var(--cm-transition);
+  white-space: nowrap;
+}
+
+.cm-btn:hover {
+  background: var(--cm-bg-hover);
+}
+
+.cm-btn--primary {
+  background: var(--cm-primary);
+  color: var(--cm-primary-text);
+  border-color: var(--cm-primary);
+}
+
+.cm-btn--primary:hover {
+  background: var(--cm-primary-hover);
+  border-color: var(--cm-primary-hover);
+}
+
+.cm-btn--danger {
+  color: var(--cm-danger);
+  border-color: var(--cm-danger);
+}
+
+.cm-btn--danger:hover {
+  background: var(--cm-danger);
+  color: var(--cm-primary-text);
+}
+
+.cm-btn--sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.cm-btn--icon {
+  padding: 6px;
+  border: none;
+  background: transparent;
+  color: var(--cm-text-secondary);
+  cursor: pointer;
+  border-radius: var(--cm-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--cm-transition), background var(--cm-transition);
+}
+
+.cm-btn--icon:hover {
+  color: var(--cm-text);
+  background: var(--cm-bg-hover);
+}
+
+/* ── Panel Body (scrollable capsule list) ───────────────────── */
+.cm-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.cm-panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cm-panel-body::-webkit-scrollbar-thumb {
+  background: var(--cm-border);
+  border-radius: 3px;
+}
+
+/* ── Empty State ────────────────────────────────────────────── */
+.cm-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--cm-text-secondary);
+  text-align: center;
+}
+
+.cm-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.cm-empty p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ── Loading Spinner ────────────────────────────────────────── */
+.cm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.cm-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--cm-border);
+  border-top-color: var(--cm-primary);
+  border-radius: 50%;
+  animation: cm-spin 0.7s linear infinite;
+}
+
+@keyframes cm-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Capsule Card ───────────────────────────────────────────── */
+.cm-card {
+  background: var(--cm-bg);
+  border: 1px solid var(--cm-border);
+  border-radius: var(--cm-radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  transition: box-shadow var(--cm-transition);
+}
+
+.cm-card:hover {
+  box-shadow: var(--cm-shadow-sm);
+}
+
+.cm-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cm-text);
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.cm-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--cm-text-secondary);
+}
+
+.cm-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cm-badge--memory {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.cm-badge--skill {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cm-badge--hybrid {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.cm-badge--context {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Dark theme badge overrides */
+.cm-widget[data-theme="dark"] .cm-badge--memory,
+.cm-widget[data-theme="auto"] .cm-badge--memory {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+.cm-widget[data-theme="dark"] .cm-badge--skill,
+.cm-widget[data-theme="auto"] .cm-badge--skill {
+  background: #451a03;
+  color: #fde68a;
+}
+
+.cm-widget[data-theme="dark"] .cm-badge--hybrid,
+.cm-widget[data-theme="auto"] .cm-badge--hybrid {
+  background: #2e1065;
+  color: #c4b5fd;
+}
+
+.cm-widget[data-theme="dark"] .cm-badge--context,
+.cm-widget[data-theme="auto"] .cm-badge--context {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+@media (prefers-color-scheme: light) {
+  .cm-widget[data-theme="auto"] .cm-badge--memory {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .cm-widget[data-theme="auto"] .cm-badge--skill {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .cm-widget[data-theme="auto"] .cm-badge--hybrid {
+    background: #ede9fe;
+    color: #5b21b6;
+  }
+  .cm-widget[data-theme="auto"] .cm-badge--context {
+    background: #d1fae5;
+    color: #065f46;
+  }
+}
+
+.cm-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.cm-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--cm-radius-sm);
+  background: var(--cm-bg-secondary);
+  color: var(--cm-text-secondary);
+  font-size: 11px;
+}
+
+.cm-card-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--cm-border);
+}
+
+/* ── Modal / Dialog Overlay ─────────────────────────────────── */
+.cm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  background: var(--cm-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: cm-fade-in 0.15s ease;
+}
+
+@keyframes cm-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.cm-dialog {
+  background: var(--cm-bg);
+  border-radius: var(--cm-radius);
+  box-shadow: var(--cm-shadow);
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: cm-slide-up 0.2s ease;
+}
+
+@keyframes cm-slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.cm-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--cm-border);
+}
+
+.cm-dialog-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cm-text);
+  margin: 0;
+}
+
+.cm-dialog-body {
+  padding: 20px;
+}
+
+.cm-dialog-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 12px 20px;
+  border-top: 1px solid var(--cm-border);
+}
+
+/* ── Form Elements ──────────────────────────────────────────── */
+.cm-form-group {
+  margin-bottom: 16px;
+}
+
+.cm-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.cm-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cm-text);
+  margin-bottom: 6px;
+}
+
+.cm-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--cm-border);
+  border-radius: var(--cm-radius-sm);
+  background: var(--cm-bg);
+  color: var(--cm-text);
+  font-size: 14px;
+  font-family: var(--cm-font);
+  transition: border-color var(--cm-transition);
+  outline: none;
+}
+
+.cm-input:focus {
+  border-color: var(--cm-primary);
+}
+
+.cm-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--cm-border);
+  border-radius: var(--cm-radius-sm);
+  background: var(--cm-bg);
+  color: var(--cm-text);
+  font-size: 14px;
+  font-family: var(--cm-font);
+  cursor: pointer;
+  outline: none;
+}
+
+.cm-select:focus {
+  border-color: var(--cm-primary);
+}
+
+/* ── Drag-and-Drop Zone ─────────────────────────────────────── */
+.cm-dropzone {
+  border: 2px dashed var(--cm-border);
+  border-radius: var(--cm-radius);
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--cm-transition), background var(--cm-transition);
+  color: var(--cm-text-secondary);
+  font-size: 14px;
+}
+
+.cm-dropzone:hover,
+.cm-dropzone.cm-dropzone--active {
+  border-color: var(--cm-primary);
+  background: var(--cm-bg-hover);
+}
+
+.cm-dropzone-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.cm-dropzone-text {
+  margin-bottom: 4px;
+}
+
+.cm-dropzone-hint {
+  font-size: 12px;
+  color: var(--cm-text-secondary);
+}
+
+.cm-dropzone-filename {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cm-primary);
+  font-family: var(--cm-font-mono);
+}
+
+/* ── Notification Panel (bottom-right floating) ─────────────── */
+.cm-notify-container {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 999997;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.cm-notify {
+  pointer-events: all;
+  background: var(--cm-notify-bg);
+  color: var(--cm-notify-text);
+  border-radius: var(--cm-radius);
+  box-shadow: var(--cm-shadow);
+  padding: 14px 16px;
+  width: 340px;
+  max-width: calc(100vw - 40px);
+  animation: cm-notify-in 0.3s ease;
+  position: relative;
+}
+
+@keyframes cm-notify-in {
+  from {
+    transform: translateX(100%) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.cm-notify--dismissed {
+  animation: cm-notify-out 0.25s ease forwards;
+}
+
+@keyframes cm-notify-out {
+  to {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+.cm-notify-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cm-notify-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cm-notify-text);
+}
+
+.cm-notify-close {
+  background: none;
+  border: none;
+  color: var(--cm-notify-text);
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px;
+  line-height: 1;
+}
+
+.cm-notify-close:hover {
+  opacity: 1;
+}
+
+.cm-notify-body {
+  font-size: 12px;
+  color: var(--cm-notify-text);
+  opacity: 0.85;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.cm-notify-skill-name {
+  font-weight: 600;
+  color: #a5b4fc;
+  font-family: var(--cm-font-mono);
+  font-size: 13px;
+}
+
+.cm-notify-confidence {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.cm-notify-confidence--high {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+
+.cm-notify-confidence--medium {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.cm-notify-confidence--low {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+}
+
+.cm-notify-preview {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--cm-radius-sm);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: var(--cm-font-mono);
+  margin-bottom: 10px;
+  max-height: 80px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cm-notify-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.cm-notify-actions .cm-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+.cm-notify-actions .cm-btn--primary {
+  background: #818cf8;
+  border-color: #818cf8;
+  color: #0f0f23;
+}
+
+.cm-notify-actions .cm-btn--primary:hover {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+
+/* ── Error / Status Messages ────────────────────────────────── */
+.cm-error {
+  padding: 12px 16px;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid var(--cm-danger);
+  border-radius: var(--cm-radius-sm);
+  color: var(--cm-danger);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.cm-success-msg {
+  padding: 12px 16px;
+  background: rgba(22, 163, 74, 0.1);
+  border: 1px solid var(--cm-success);
+  border-radius: var(--cm-radius-sm);
+  color: var(--cm-success);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .cm-panel {
+    width: 100vw;
+  }
+
+  .cm-dialog {
+    width: calc(100vw - 24px);
+    margin: 12px;
+  }
+
+  .cm-notify {
+    width: calc(100vw - 40px);
+  }
+}

@@ -1,0 +1,87 @@
+site_name: "💊 CapsuleMemory"
+site_description: User-sovereign AI memory capsule system with skill extraction
+site_author: Musenn
+site_url: https://Musenn.github.io/capsule-memory
+repo_url: https://github.com/Musenn/capsule-memory
+repo_name: Musenn/capsule-memory
+copyright: "Copyright &copy; 2025-2026 Xuelin Xu (Musenn) · Apache License 2.0"
+
+docs_dir: docs
+
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+extra:
+  alternate:
+    - name: English
+      link: /capsule-memory/
+      lang: en
+    - name: 中文
+      link: /capsule-memory/zh/
+      lang: zh
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+
+nav:
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - Core Concepts: concepts.md
+  - API Reference: api-reference.md
+  - Integrations:
+    - OpenAI: integrations/openai.md
+    - LangChain: integrations/langchain.md
+    - LlamaIndex: integrations/llamaindex.md
+    - REST API: integrations/rest-api.md
+    - MCP Server: integrations/mcp.md
+    - Web Widget: integrations/widget.md
+  - Attribution: attribution.md
+  - Changelog: changelog.md
+  - 中文文档:
+    - 首页: index_zh.md
+    - 快速开始: quickstart_zh.md
+    - 核心概念: concepts_zh.md
+    - API 参考: api-reference_zh.md
+    - 集成指南:
+      - OpenAI: integrations/openai_zh.md
+      - LangChain: integrations/langchain_zh.md
+      - LlamaIndex: integrations/llamaindex_zh.md
+      - REST API: integrations/rest-api_zh.md
+      - MCP Server: integrations/mcp_zh.md
+      - Web Widget: integrations/widget_zh.md
+    - 归属说明: attribution_zh.md
+    - 更新日志: changelog_zh.md
