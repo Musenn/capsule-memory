@@ -87,7 +87,7 @@ def verify_checksum(capsule_dict: dict[str, Any]) -> bool:
     stored = capsule_dict.get("integrity", {}).get("checksum", "")
     status = capsule_dict.get("lifecycle", {}).get("status", "draft")
     if not stored:
-        return status == "draft"
+        return bool(status == "draft")
 
     metadata = capsule_dict.get("metadata", {})
     signed = {

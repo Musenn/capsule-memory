@@ -77,7 +77,7 @@ def _get_or_create_session(user_id: str, session_id: str | None = None) -> Any:
 def _build_server() -> "Server":
     server = Server("capsule-memory")
 
-    @server.list_tools()  # type: ignore[untyped-decorator, no-untyped-call]
+    @server.list_tools()  # type: ignore[untyped-decorator, no-untyped-call, unused-ignore]
     async def list_tools() -> list[types.Tool]:
         return [
             types.Tool(
@@ -187,7 +187,7 @@ def _build_server() -> "Server":
             ),
         ]
 
-    @server.call_tool()  # type: ignore[untyped-decorator]
+    @server.call_tool()  # type: ignore[untyped-decorator, no-untyped-call, unused-ignore]
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
         from capsule_memory.exceptions import CapsuleNotFoundError
         cm = get_cm()
@@ -368,7 +368,7 @@ def main() -> None:
     init_capsule_memory(storage_path=args.storage, storage_type=args.storage_type)
 
     server = _build_server()
-    asyncio.run(stdio_server(server))  # type: ignore[arg-type]
+    asyncio.run(stdio_server(server))  # type: ignore[arg-type, unused-ignore]
 
 
 if __name__ == "__main__":
