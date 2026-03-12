@@ -56,5 +56,5 @@ def sanitize_llm_json(raw: str) -> Any:
             pass
 
     raise json.JSONDecodeError(
-        f"No valid JSON found in LLM response", text, 0
+        "No valid JSON found in LLM response", text, 0
     )
