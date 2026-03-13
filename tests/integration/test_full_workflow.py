@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -10,6 +11,8 @@ import pytest
 
 from capsule_memory import CapsuleMemory, CapsuleStatus
 from capsule_memory.storage.local import LocalStorage
+
+_has_cryptography = importlib.util.find_spec("cryptography") is not None
 
 
 @pytest.fixture(autouse=True)
@@ -101,6 +104,7 @@ async def test_full_workflow(cm: CapsuleMemory, tmp_path: Path) -> None:
             assert merged.metadata.title == "Merged Test"
 
 
+@pytest.mark.skipif(not _has_cryptography, reason="cryptography not installed")
 async def test_export_import_encrypted(cm: CapsuleMemory, tmp_path: Path) -> None:
     """Test encrypted export and import roundtrip."""
     async with cm.session("enc_user") as session:
