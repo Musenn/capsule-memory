@@ -21,11 +21,23 @@ export interface RecallResult {
   sources: string[];
 }
 
+/** A fact extracted by the host LLM for direct injection into sealed capsules. */
+export interface MemoryFact {
+  key: string;
+  value: string;
+  confidence?: number;
+  category?: "technical_preference" | "project_info" | "user_preference" | "decision" | "constraint" | "other";
+}
+
 /** Options for sealing a session into a capsule. */
 export interface SealOptions {
-  userId: string;
+  userId?: string;
   title?: string;
   tags?: string[];
+  /** Pre-extracted facts from the host LLM. Produces higher quality memories than server-side extraction. */
+  facts?: MemoryFact[];
+  /** Pre-extracted summary from the host LLM (100-300 words). */
+  summary?: string;
 }
 
 /** Capsule summary returned by list and detail endpoints. */

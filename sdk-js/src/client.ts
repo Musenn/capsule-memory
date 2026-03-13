@@ -107,7 +107,7 @@ export class CapsuleMemoryClient {
    */
   async recall(query: string, topK: number = 3): Promise<RecallResult> {
     const params = new URLSearchParams({
-      q: query,
+      query: query,
       user_id: this.userId,
       top_k: String(topK),
     });
@@ -280,16 +280,20 @@ export class CapsuleMemoryClient {
    * @returns The newly created capsule.
    */
   async sealSession(sessionId: string, options?: SealOptions): Promise<Capsule> {
+    const body: Record<string, unknown> = {
+      user_id: options?.userId ?? this.userId,
+      title: options?.title ?? "",
+      tags: options?.tags ?? [],
+    };
+    if (options?.facts) body.facts = options.facts;
+    if (options?.summary) body.summary = options.summary;
+
     const raw = await this.request<Record<string, unknown>>(
       `/api/v1/sessions/${encodeURIComponent(sessionId)}/seal`,
       {
         method: "POST",
         headers: this.headers("application/json"),
-        body: JSON.stringify({
-          user_id: options?.userId ?? this.userId,
-          title: options?.title ?? "",
-          tags: options?.tags ?? [],
-        }),
+        body: JSON.stringify(body),
       },
     );
 

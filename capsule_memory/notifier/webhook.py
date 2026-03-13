@@ -1,6 +1,5 @@
 from __future__ import annotations
 import logging
-import httpx
 from capsule_memory.models.events import SkillTriggerEvent
 from capsule_memory.notifier.base import BaseNotifier
 
@@ -16,6 +15,7 @@ class WebhookNotifier(BaseNotifier):
 
     async def notify(self, event: SkillTriggerEvent) -> None:
         try:
+            import httpx
             async with httpx.AsyncClient() as client:
                 resp = await client.post(
                     self._url,

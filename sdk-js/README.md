@@ -11,29 +11,28 @@ npm install @capsule-memory/sdk
 ## Quick Start
 
 ```typescript
-import { CapsuleClient } from "@capsule-memory/sdk";
+import { CapsuleMemoryClient } from "@capsule-memory/sdk";
 
-const client = new CapsuleClient({
-  baseUrl: "http://localhost:8000",
+const client = new CapsuleMemoryClient({
+  apiUrl: "http://localhost:8000",
   apiKey: "your-api-key", // optional
 });
 
-// Ingest a conversation turn
-await client.ingest({
-  userId: "user_1",
-  userMessage: "How do I optimize PostgreSQL queries?",
-  assistantResponse: "Here are several approaches...",
-});
+// Create a session and ingest a conversation turn
+const { session_id } = await client.createSession();
+await client.ingest(session_id, "How do I optimize PostgreSQL queries?", "Here are several approaches...");
 
-// Seal the session into a capsule
-const capsule = await client.seal({ userId: "user_1" });
+// Seal the session into a capsule (with optional host LLM extraction)
+const capsule = await client.sealSession(session_id, {
+  title: "PostgreSQL Optimization",
+  tags: ["database", "postgresql"],
+  facts: [{ key: "db.optimization", value: "Use EXPLAIN ANALYZE for query plans" }],
+  summary: "Discussed PostgreSQL query optimization strategies.",
+});
 
 // Recall relevant memories
-const memories = await client.recall({
-  query: "database optimization",
-  userId: "user_1",
-  topK: 3,
-});
+const result = await client.recall("database optimization", 3);
+console.log(result.prompt_injection);
 ```
 
 ## API

@@ -4,6 +4,7 @@ export type {
   ExportFormat,
   RecallResult,
   SealOptions,
+  MemoryFact,
   Capsule,
 } from "./models";
 

@@ -138,7 +138,7 @@ class TestWebhookNotifier:
             headers={"X-Custom": "test"},
         )
 
-        with patch("capsule_memory.notifier.webhook.httpx.AsyncClient", return_value=mock_client):
+        with patch("httpx.AsyncClient", return_value=mock_client):
             await notifier.notify(sample_event)
 
         mock_client.post.assert_called_once()
@@ -158,7 +158,7 @@ class TestWebhookNotifier:
         notifier = WebhookNotifier(url="https://example.com/fail")
 
         with (
-            patch("capsule_memory.notifier.webhook.httpx.AsyncClient", return_value=mock_client),
+            patch("httpx.AsyncClient", return_value=mock_client),
             caplog.at_level(logging.WARNING),
         ):
             await notifier.notify(sample_event)

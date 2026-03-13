@@ -35,12 +35,27 @@
 pip install capsule-memory
 ```
 
-### 基本用法
+### 被动记忆（每次交互一行代码）
 
 ```python
 from capsule_memory import CapsuleMemory
 
 cm = CapsuleMemory()
+
+# 一次调用处理会话生命周期、自动召回和录入
+result = await cm.remember("我偏好用 black 格式化", "好的，使用 black。", user_id="alice")
+
+# 首次调用会返回历史上下文（如果有的话）
+if "recalled_context" in result:
+    print(result["recalled_context"])
+
+# 完成时封存以持久化
+await cm.seal_session(user_id="alice", title="Python 工具偏好", tags=["python"])
+```
+
+### 主动模式（完全控制）
+
+```python
 async with cm.session("user_123") as session:
     await session.ingest(user_message, ai_response)
     # 退出上下文时自动封存，也可手动调用 session.seal()
@@ -53,26 +68,29 @@ result = await cm.recall(query="部署步骤", user_id="user_123")
 print(result["prompt_injection"])  # 可直接注入任意 LLM 的上下文
 ```
 
+### MCP Server（Claude Code / Cursor / Windsurf 等）
+
+零配置被动记忆 — 内置 instructions 自动告知宿主 LLM 如何管理记忆，无需 CLAUDE.md 或 .cursorrules。
+
+```bash
+pip install 'capsule-memory[mcp]'
+capsule-memory-mcp
+```
+
 ### REST API
 
 ```bash
-pip install capsule-memory[server]
+pip install 'capsule-memory[server]'
 capsule-memory serve --port 8000
 # 打开 http://localhost:8000/docs 查看交互式 API 文档
 ```
 
-### MCP Server（Claude Code 集成）
+### CLI
 
 ```bash
-capsule-memory mcp --storage local --user my_user
-```
-
-### Mock 模式（无需 API Key）
-
-设置环境变量即可使用模拟数据提取，无需调用 LLM：
-
-```bash
-CAPSULE_MOCK_EXTRACTOR=true python your_script.py
+capsule-memory ingest "如何部署？" "使用 docker-compose" -s my_session
+capsule-memory seal -s my_session -t "部署指南" --tag deployment
+capsule-memory recall "部署"
 ```
 
 ## 架构概览
@@ -113,7 +131,9 @@ Session ─── ingest() ──→ 技能检测 ──→ seal() ──→ Cap
 | QdrantStorage | 向量搜索 (384维) | 生产环境、可水平扩展 |
 
 ```bash
-# 安装可选后端
+# 安装可选扩展
+pip install capsule-memory[llm]      # LLM 提取（litellm）
+pip install capsule-memory[crypto]   # 加密导出/导入
 pip install capsule-memory[sqlite]   # SQLite + sentence-transformers
 pip install capsule-memory[redis]    # Redis
 pip install capsule-memory[qdrant]   # Qdrant
@@ -142,8 +162,9 @@ pip install capsule-memory[all]      # 全部安装
 
 | 集成 | 类型 | 文档 |
 |------|------|------|
+| 自动记忆 | 被动 + 主动双模式 | [指南](integrations/auto-memory_zh.md) |
 | REST API | 16 个端点，Bearer 认证 | [指南](integrations/rest-api_zh.md) |
-| MCP Server | 10 个工具 | [指南](integrations/mcp_zh.md) |
+| MCP Server | 10 个工具，内置 instructions | [指南](integrations/mcp_zh.md) |
 | LangChain | 即插即用 `ConversationBufferMemory` | [指南](integrations/langchain_zh.md) |
 | LlamaIndex | 即插即用 `ChatMemoryBuffer` | [指南](integrations/llamaindex_zh.md) |
 | Web Widget | 可嵌入的 JS 面板 | [指南](integrations/widget_zh.md) |

@@ -33,10 +33,27 @@ Most AI memory systems persist everything automatically, giving users little con
 pip install capsule-memory
 ```
 
+### Passive Memory (one line per exchange)
+
 ```python
 from capsule_memory import CapsuleMemory
 
 cm = CapsuleMemory()
+
+# One call handles session lifecycle, auto-recall, and ingestion
+result = await cm.remember("I prefer black for formatting", "Noted, using black.", user_id="alice")
+
+# First call returns historical context if available
+if "recalled_context" in result:
+    print(result["recalled_context"])
+
+# When done, seal to persist
+await cm.seal_session(user_id="alice", title="Python Tooling", tags=["python"])
+```
+
+### Active Mode (full control)
+
+```python
 async with cm.session("user_123") as session:
     await session.ingest(user_message, ai_response)
     # Session auto-seals on exit, or call session.seal() explicitly
@@ -49,18 +66,29 @@ result = await cm.recall(query="deployment steps", user_id="user_123")
 print(result["prompt_injection"])  # Ready to inject into any LLM
 ```
 
+### MCP Server (Claude Code / Cursor / Windsurf / etc.)
+
+Zero-config passive memory — built-in instructions tell the host LLM how to manage memory automatically. No CLAUDE.md or .cursorrules needed.
+
+```bash
+pip install 'capsule-memory[mcp]'
+capsule-memory-mcp
+```
+
 ### REST API
 
 ```bash
-pip install capsule-memory[server]
+pip install 'capsule-memory[server]'
 capsule-memory serve --port 8000
 # Visit http://localhost:8000/docs for interactive API docs
 ```
 
-### MCP Server (Claude Code)
+### CLI
 
 ```bash
-capsule-memory mcp --storage local --user my_user
+capsule-memory ingest "How to deploy?" "Use docker-compose" -s my_session
+capsule-memory seal -s my_session -t "Deployment Guide" --tag deployment
+capsule-memory recall "deployment"
 ```
 
 ## Architecture
@@ -83,7 +111,9 @@ Session ─── ingest() ──→ Skill Detection ──→ seal() ──→ 
 | QdrantStorage | Vector (384-dim) | Production, scalable |
 
 ```bash
-# Install optional backends
+# Install optional extras
+pip install capsule-memory[llm]      # LLM-powered extraction (litellm)
+pip install capsule-memory[crypto]   # Encrypted capsule export/import
 pip install capsule-memory[sqlite]   # SQLite + sentence-transformers
 pip install capsule-memory[redis]    # Redis
 pip install capsule-memory[qdrant]   # Qdrant
@@ -94,8 +124,9 @@ pip install capsule-memory[all]      # Everything
 
 | Integration | Type | Docs |
 |------------|------|------|
+| Auto Memory | Passive + Active modes | [Guide](docs/integrations/auto-memory.md) |
 | REST API | 16 endpoints, Bearer auth | [Guide](docs/integrations/rest-api.md) |
-| MCP Server | 10 tools for Claude Code | [Guide](docs/integrations/mcp.md) |
+| MCP Server | 10 tools, built-in instructions | [Guide](docs/integrations/mcp.md) |
 | LangChain | Drop-in `ConversationBufferMemory` | [Guide](docs/integrations/langchain.md) |
 | LlamaIndex | Drop-in `ChatMemoryBuffer` | [Guide](docs/integrations/llamaindex.md) |
 | Web Widget | Embeddable JS panel | [Guide](docs/integrations/widget.md) |
