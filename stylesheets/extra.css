@@ -1,0 +1,33 @@
+/* Crusher — decorative font for site title */
+@font-face {
+    font-family: 'Crusher';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Crusher Personal Use'),
+         url('https://fonts.cdnfonts.com/s/35317/CrusherPersonalUseRegular-MVZlr.woff') format('woff');
+    font-display: swap;
+}
+
+/* Site title in header — Crusher font with gradient */
+.md-header__topic:first-child .md-ellipsis {
+    font-family: 'Crusher', sans-serif !important;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #6366f1, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Dark theme: lighter gradient */
+[data-md-color-scheme="slate"] .md-header__topic:first-child .md-ellipsis {
+    background: linear-gradient(90deg, #a5b4fc, #67e8f9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Site title in mobile nav drawer */
+.md-nav--primary > .md-nav__title .md-nav__icon + .md-ellipsis {
+    font-family: 'Crusher', sans-serif !important;
+}

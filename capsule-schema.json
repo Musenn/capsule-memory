@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Musenn/capsule-memory/blob/main/docs/capsule-schema.json",
+  "title": "CapsuleMemory Capsule Schema",
+  "description": "Official JSON Schema for CapsuleMemory capsule files. Schema version: capsule-schema/1.0+4240ea9f",
+  "type": "object",
+  "required": ["capsule_id", "capsule_type", "schema_version", "identity", "payload"],
+  "properties": {
+    "capsule_id": {
+      "type": "string",
+      "description": "Unique capsule identifier with protocol fingerprint prefix",
+      "pattern": "^cap_[0-9]{8}_[a-f0-9]{4}_[a-f0-9]+"
+    },
+    "capsule_type": {
+      "type": "string",
+      "enum": ["memory", "skill", "hybrid", "context"],
+      "description": "Type of capsule content"
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0.0",
+      "description": "Capsule format version"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "capsule-schema/1.0+4240ea9f",
+      "description": "Schema version with protocol fingerprint suffix"
+    },
+    "identity": {
+      "type": "object",
+      "required": ["user_id", "session_id"],
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "Owner user identifier"
+        },
+        "agent_id": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Optional agent identifier"
+        },
+        "session_id": {
+          "type": "string",
+          "description": "Session ID that produced this capsule"
+        },
+        "origin_platform": {
+          "type": "string",
+          "default": "unknown",
+          "description": "Platform where the session originated"
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 creation timestamp"
+        },
+        "sealed_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the capsule was sealed"
+        },
+        "expires_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Optional expiration timestamp"
+        },
+        "last_accessed_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Last access timestamp"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "sealed", "imported", "archived"],
+          "default": "draft",
+          "description": "Current lifecycle status"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "User-defined tags for categorization"
+        },
+        "language": {
+          "type": "string",
+          "default": "unknown",
+          "description": "Content language"
+        },
+        "title": {
+          "type": "string",
+          "default": "",
+          "description": "Human-readable capsule title"
+        },
+        "description": {
+          "type": "string",
+          "default": "",
+          "description": "Capsule description"
+        },
+        "token_count": {
+          "type": "integer",
+          "default": 0,
+          "description": "Total token count"
+        },
+        "turn_count": {
+          "type": "integer",
+          "default": 0,
+          "description": "Number of conversation turns"
+        },
+        "forked_from": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Capsule ID this was forked from"
+        },
+        "capsule_created_by": {
+          "type": "string",
+          "const": "capsule-memory",
+          "description": "Library that created this capsule"
+        },
+        "capsule_project_url": {
+          "type": "string",
+          "const": "https://github.com/Musenn/capsule-memory",
+          "description": "Project repository URL"
+        }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "description": "Capsule content — structure varies by capsule_type. MEMORY: {facts, context_summary, entities, timeline, raw_turns}. SKILL: {skill_name, description, instructions, trigger_pattern, ...}. HYBRID: {memory: {...}, skills: [...]}. CONTEXT: {content: string}.",
+      "additionalProperties": true
+    },
+    "integrity": {
+      "type": "object",
+      "properties": {
+        "checksum": {
+          "type": "string",
+          "default": "",
+          "description": "HMAC-SHA256 integrity checksum"
+        },
+        "pre_encrypt_checksum": {
+          "type": "string",
+          "default": "",
+          "description": "Checksum before encryption (for encrypted capsules)"
+        },
+        "signed_by": {
+          "type": "string",
+          "default": "capsule-memory",
+          "description": "Signer identity"
+        },
+        "encrypted": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the payload is encrypted"
+        },
+        "encryption_algo": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Encryption algorithm (e.g. Fernet)"
+        },
+        "salt": {
+          "type": "string",
+          "default": "",
+          "description": "Encryption salt (base64)"
+        }
+      }
+    }
+  }
+}
