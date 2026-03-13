@@ -375,7 +375,7 @@ def _build_server() -> "Server":
                     pre_extracted=pre_extracted,
                 )
                 del _active_sessions[user_id]
-                result: dict[str, Any] = {
+                result = {
                     "capsule_id": capsule.capsule_id,
                     "title": capsule.metadata.title,
                     "turn_count": capsule.metadata.turn_count,
