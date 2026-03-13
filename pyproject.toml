@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "capsule-memory"
-version = "0.1.0"
+version = "0.1.1"
 description = "User-sovereign AI memory capsule system with skill extraction"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,14 +14,19 @@ authors = [
 ]
 keywords = ["ai", "memory", "capsule", "llm", "skill-extraction", "agent"]
 classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
 dependencies = [
     "pydantic>=2.0",
-    "litellm>=1.0",
     "msgpack>=1.0",
     "cryptography>=41.0",
     "rich>=13.0",
@@ -36,6 +41,7 @@ Repository = "https://github.com/Musenn/capsule-memory"
 Documentation = "https://Musenn.github.io/capsule-memory"
 
 [project.optional-dependencies]
+llm = ["litellm>=1.0"]
 sqlite = ["sqlite-vec>=0.1.6", "sentence-transformers>=2.7"]
 redis = ["redis>=5.0"]
 qdrant = ["qdrant-client>=1.7"]
@@ -43,6 +49,7 @@ server = ["fastapi>=0.110", "uvicorn>=0.27", "python-multipart>=0.0.9"]
 mcp = ["mcp>=1.0"]
 llamaindex = ["llama-index-core>=0.10"]
 all = [
+    "litellm>=1.0",
     "sqlite-vec>=0.1.6", "sentence-transformers>=2.7",
     "redis>=5.0", "qdrant-client>=1.7",
     "fastapi>=0.110", "uvicorn>=0.27", "python-multipart>=0.0.9",
@@ -52,6 +59,7 @@ docs = ["mkdocs-material>=9.5"]
 dev = [
     "pytest>=8.0", "pytest-asyncio>=0.23", "pytest-cov>=5.0",
     "ruff>=0.4", "mypy>=1.10", "respx>=0.21",
+    "python-dotenv>=1.0",
 ]
 
 [project.scripts]
