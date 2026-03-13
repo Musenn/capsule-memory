@@ -24,10 +24,15 @@ jobs:
           pip install build
           pip install -e ".[dev,server]"
 
-      - name: Run tests before publish
+      - name: Run unit tests
         env:
           CAPSULE_MOCK_EXTRACTOR: "true"
         run: pytest tests/unit/ -v --tb=short
+
+      - name: Run integration tests
+        env:
+          CAPSULE_MOCK_EXTRACTOR: "true"
+        run: pytest tests/integration/test_full_workflow.py tests/integration/test_rest_api.py tests/integration/test_mcp_server.py -v --tb=short
 
       - name: Build package
         run: python -m build

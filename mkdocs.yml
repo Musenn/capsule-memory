@@ -63,6 +63,7 @@ nav:
   - Core Concepts: concepts.md
   - API Reference: api-reference.md
   - Integrations:
+    - Auto Memory: integrations/auto-memory.md
     - OpenAI: integrations/openai.md
     - LangChain: integrations/langchain.md
     - LlamaIndex: integrations/llamaindex.md
@@ -77,6 +78,7 @@ nav:
     - 核心概念: concepts_zh.md
     - API 参考: api-reference_zh.md
     - 集成指南:
+      - 自动记忆: integrations/auto-memory_zh.md
       - OpenAI: integrations/openai_zh.md
       - LangChain: integrations/langchain_zh.md
       - LlamaIndex: integrations/llamaindex_zh.md

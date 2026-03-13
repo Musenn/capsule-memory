@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg"><source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.svg"><img alt="CapsuleMemory" src="docs/assets/logo-light.svg" height="72" valign="middle"></picture></h1>
+<h1><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Musenn/capsule-memory/main/docs/assets/logo-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Musenn/capsule-memory/main/docs/assets/logo-light.svg"><img alt="CapsuleMemory" src="https://raw.githubusercontent.com/Musenn/capsule-memory/main/docs/assets/logo-light.svg" height="72" valign="middle"></picture></h1>
 
 **User-sovereign AI memory capsule system**
 
@@ -8,11 +8,11 @@ Track, distill, and seal memories and skills in real-time within a single sessio
 seamlessly embedding them into any AI framework via a portable capsule format.
 
 [![CI](https://github.com/Musenn/capsule-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/Musenn/capsule-memory/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Musenn/capsule-memory/blob/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/capsule-memory)](https://pypi.org/project/capsule-memory/)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 
-**English** | [中文](docs/README_zh.md)
+**English** | [中文](https://github.com/Musenn/capsule-memory/blob/main/docs/README_zh.md)
 
 </div>
 
@@ -124,22 +124,23 @@ pip install capsule-memory[all]      # Everything
 
 | Integration | Type | Docs |
 |------------|------|------|
-| Auto Memory | Passive + Active modes | [Guide](docs/integrations/auto-memory.md) |
-| REST API | 16 endpoints, Bearer auth | [Guide](docs/integrations/rest-api.md) |
-| MCP Server | 10 tools, built-in instructions | [Guide](docs/integrations/mcp.md) |
-| LangChain | Drop-in `ConversationBufferMemory` | [Guide](docs/integrations/langchain.md) |
-| LlamaIndex | Drop-in `ChatMemoryBuffer` | [Guide](docs/integrations/llamaindex.md) |
-| Web Widget | Embeddable JS panel | [Guide](docs/integrations/widget.md) |
-| TypeScript SDK | `@capsule-memory/sdk` | [sdk-js/](sdk-js/) |
+| Auto Memory | Passive + Active modes | [Guide](https://github.com/Musenn/capsule-memory/blob/main/docs/integrations/auto-memory.md) |
+| OpenAI | Native OpenAI SDK adapter | [Guide](https://github.com/Musenn/capsule-memory/blob/main/docs/integrations/openai.md) |
+| REST API | 16 endpoints, Bearer auth | [Guide](https://github.com/Musenn/capsule-memory/blob/main/docs/integrations/rest-api.md) |
+| MCP Server | 10 tools, built-in instructions | [Guide](https://github.com/Musenn/capsule-memory/blob/main/docs/integrations/mcp.md) |
+| LangChain | Drop-in `ConversationBufferMemory` | [Guide](https://github.com/Musenn/capsule-memory/blob/main/docs/integrations/langchain.md) |
+| LlamaIndex | Drop-in `ChatMemoryBuffer` | [Guide](https://github.com/Musenn/capsule-memory/blob/main/docs/integrations/llamaindex.md) |
+| Web Widget | Embeddable JS panel | [Guide](https://github.com/Musenn/capsule-memory/blob/main/docs/integrations/widget.md) |
+| TypeScript SDK | `@capsule-memory/sdk` | [sdk-js/](https://github.com/Musenn/capsule-memory/tree/main/sdk-js) |
 
 ## Documentation
 
 Full documentation: [https://Musenn.github.io/capsule-memory](https://Musenn.github.io/capsule-memory)
 
-- [Quick Start](docs/quickstart.md)
-- [Core Concepts](docs/concepts.md)
-- [API Reference](docs/api-reference.md)
-- [Changelog](docs/changelog.md)
+- [Quick Start](https://github.com/Musenn/capsule-memory/blob/main/docs/quickstart.md)
+- [Core Concepts](https://github.com/Musenn/capsule-memory/blob/main/docs/concepts.md)
+- [API Reference](https://github.com/Musenn/capsule-memory/blob/main/docs/api-reference.md)
+- [Changelog](https://github.com/Musenn/capsule-memory/blob/main/docs/changelog.md)
 
 ## Contributing
 
@@ -154,9 +155,9 @@ Contributions are welcome! Please open an issue first to discuss what you'd like
 
 ## License
 
-Licensed under [Apache License 2.0](LICENSE).
+Licensed under [Apache License 2.0](https://github.com/Musenn/capsule-memory/blob/main/LICENSE).
 
-See [NOTICE](NOTICE) for attribution requirements.
+See [NOTICE](https://github.com/Musenn/capsule-memory/blob/main/NOTICE) for attribution requirements.
 
 ---
 

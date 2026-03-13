@@ -8,11 +8,11 @@
 通过便携式胶囊格式无缝嵌入任意 AI 框架。
 
 [![CI](https://github.com/Musenn/capsule-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/Musenn/capsule-memory/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Musenn/capsule-memory/blob/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/capsule-memory)](https://pypi.org/project/capsule-memory/)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 
-[English](../README.md) | **中文**
+[English](https://github.com/Musenn/capsule-memory/blob/main/README.md) | **中文**
 
 </div>
 
@@ -163,12 +163,13 @@ pip install capsule-memory[all]      # 全部安装
 | 集成 | 类型 | 文档 |
 |------|------|------|
 | 自动记忆 | 被动 + 主动双模式 | [指南](integrations/auto-memory_zh.md) |
+| OpenAI | 原生 OpenAI SDK 适配器 | [指南](integrations/openai_zh.md) |
 | REST API | 16 个端点，Bearer 认证 | [指南](integrations/rest-api_zh.md) |
 | MCP Server | 10 个工具，内置 instructions | [指南](integrations/mcp_zh.md) |
 | LangChain | 即插即用 `ConversationBufferMemory` | [指南](integrations/langchain_zh.md) |
 | LlamaIndex | 即插即用 `ChatMemoryBuffer` | [指南](integrations/llamaindex_zh.md) |
 | Web Widget | 可嵌入的 JS 面板 | [指南](integrations/widget_zh.md) |
-| TypeScript SDK | `@capsule-memory/sdk` | [sdk-js/](../sdk-js/) |
+| TypeScript SDK | `@capsule-memory/sdk` | [sdk-js/](https://github.com/Musenn/capsule-memory/tree/main/sdk-js) |
 
 ## 导出与导入
 
@@ -227,9 +228,9 @@ capsule-memory mcp
 
 ## 许可证
 
-基于 [Apache License 2.0](../LICENSE) 开源。
+基于 [Apache License 2.0](https://github.com/Musenn/capsule-memory/blob/main/LICENSE) 开源。
 
-详见 [NOTICE](../NOTICE) 了解归属要求。
+详见 [NOTICE](https://github.com/Musenn/capsule-memory/blob/main/NOTICE) 了解归属要求。
 
 ---
 

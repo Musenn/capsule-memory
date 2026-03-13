@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 from typing import TYPE_CHECKING, Any
 
 from capsule_memory.adapters.base import BaseAdapter, TurnData
@@ -109,14 +110,15 @@ class CapsuleMemoryLangChainMemory:
             loop = None
 
         if loop is not None and loop.is_running():
-            import threading
-
-            if not hasattr(self, "_bg_loop"):
-                self._bg_loop = asyncio.new_event_loop()
-                t = threading.Thread(
-                    target=self._bg_loop.run_forever, daemon=True
-                )
-                t.start()
+            if not hasattr(self, "_bg_lock"):
+                self._bg_lock = threading.Lock()
+            with self._bg_lock:
+                if not hasattr(self, "_bg_loop"):
+                    self._bg_loop = asyncio.new_event_loop()
+                    t = threading.Thread(
+                        target=self._bg_loop.run_forever, daemon=True
+                    )
+                    t.start()
             future = asyncio.run_coroutine_threadsafe(coro, self._bg_loop)
             return future.result()
         else:

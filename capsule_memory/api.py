@@ -217,7 +217,7 @@ class CapsuleMemory:
                     result["recalled_context"] = recall_result.get("prompt_injection", "")
                     result["recalled_facts_count"] = len(recalled_facts)
             except Exception:
-                pass
+                logger.debug("Auto-recall failed on new session, skipping", exc_info=True)
 
         return result
 
