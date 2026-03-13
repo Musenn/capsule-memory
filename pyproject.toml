@@ -68,6 +68,16 @@ dev = [
 capsule-memory = "capsule_memory.cli:app"
 capsule-memory-mcp = "capsule_memory.server.mcp_server:main"
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "capsule_memory/",
+    "tests/",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "pyproject.toml",
+]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
