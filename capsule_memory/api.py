@@ -192,8 +192,6 @@ class CapsuleMemory:
             if "recalled_context" in result:
                 print("History:", result["recalled_context"])
         """
-        from capsule_memory.core.session import SessionTracker
-
         is_new = False
         if user_id not in self._managed_sessions or not self._managed_sessions[user_id].state.is_active:
             resolved_sid = session_id or f"sess_{_uuid4().hex[:12]}"

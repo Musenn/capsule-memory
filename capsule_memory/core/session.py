@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from capsule_memory.core.memory_compressor import MemoryCompressor
     from capsule_memory.core.skill_detector import SkillDetector
     from capsule_memory.core.skill_refiner import SkillRefiner
+    from capsule_memory.models.memory import MemoryPayload
     from capsule_memory.notifier.base import BaseNotifier
     from capsule_memory.storage.base import BaseStorage
 

@@ -38,7 +38,8 @@ def test_health_check(client) -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "ok"
-    assert data["version"] == "0.1.0"
+    from capsule_memory import __version__
+    assert data["version"] == __version__
 
 
 def test_create_session(client) -> None:
