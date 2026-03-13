@@ -36,6 +36,7 @@ class CapsuleMemoryConfig:
     encrypt_by_default: bool = False
     compress_threshold: int = 8000
     compress_layer_max: int = 6000
+    default_user: str = "default"
 
     @classmethod
     def from_env(cls) -> CapsuleMemoryConfig:
@@ -51,6 +52,7 @@ class CapsuleMemoryConfig:
             encrypt_by_default=os.getenv("CAPSULE_ENCRYPT_DEFAULT", "false").lower() == "true",
             compress_threshold=int(os.getenv("CAPSULE_COMPRESS_THRESHOLD", "8000")),
             compress_layer_max=int(os.getenv("CAPSULE_COMPRESS_LAYER_MAX", "6000")),
+            default_user=os.getenv("CAPSULE_DEFAULT_USER", "default"),
         )
 
 
@@ -116,7 +118,7 @@ class CapsuleMemory:
 
     def session(
         self,
-        user_id: str,
+        user_id: str | None = None,
         session_id: str | None = None,
         agent_id: str | None = None,
         origin_platform: str = "unknown",
@@ -124,10 +126,11 @@ class CapsuleMemory:
         include_raw_turns: bool = False,
     ) -> SessionContextManager:
         """Create and return a SessionContextManager, supports async with syntax."""
+        resolved_user_id = user_id or self._config.default_user
         # Patch #3: safely generate session_id without accessing dataclass internals
         resolved_session_id = session_id if session_id else f"sess_{_uuid4().hex[:12]}"
         config = SessionConfig(
-            user_id=user_id,
+            user_id=resolved_user_id,
             session_id=resolved_session_id,
             agent_id=agent_id,
             origin_platform=origin_platform,
@@ -161,7 +164,7 @@ class CapsuleMemory:
         self,
         user_message: str,
         assistant_response: str,
-        user_id: str = "default",
+        user_id: str | None = None,
         session_id: str | None = None,
     ) -> dict[str, Any]:
         """
@@ -192,6 +195,7 @@ class CapsuleMemory:
             if "recalled_context" in result:
                 print("History:", result["recalled_context"])
         """
+        user_id = user_id or self._config.default_user
         is_new = False
         if user_id not in self._managed_sessions or not self._managed_sessions[user_id].state.is_active:
             resolved_sid = session_id or f"sess_{_uuid4().hex[:12]}"
@@ -223,7 +227,7 @@ class CapsuleMemory:
 
     async def seal_session(
         self,
-        user_id: str = "default",
+        user_id: str | None = None,
         title: str = "",
         tags: list[str] | None = None,
         pre_extracted: Any = None,
@@ -240,6 +244,7 @@ class CapsuleMemory:
         Returns:
             The sealed Capsule, or None if no active session exists.
         """
+        user_id = user_id or self._config.default_user
         if user_id not in self._managed_sessions:
             return None
         tracker = self._managed_sessions[user_id]
@@ -249,9 +254,10 @@ class CapsuleMemory:
         del self._managed_sessions[user_id]
         return capsule
 
-    async def recall(self, query: str, user_id: str, top_k: int = 5) -> dict[str, Any]:
+    async def recall(self, query: str, user_id: str | None = None, top_k: int = 5) -> dict[str, Any]:
         """Recall historical memories across sessions (no new session required)."""
-        return await self._store.get_context_for_injection(query, user_id, top_k)
+        resolved_user_id = user_id or self._config.default_user
+        return await self._store.get_context_for_injection(query, resolved_user_id, top_k)
 
     async def export_capsule(
         self,
@@ -269,11 +275,12 @@ class CapsuleMemory:
     async def import_capsule(
         self,
         file_path: str,
-        user_id: str,
+        user_id: str | None = None,
         passphrase: str = "",
     ) -> Capsule:
         """Import a capsule from file."""
-        return await self._storage.import_capsule_file(file_path, user_id, passphrase)
+        resolved_user_id = user_id or self._config.default_user
+        return await self._storage.import_capsule_file(file_path, resolved_user_id, passphrase)
 
     @property
     def store(self) -> CapsuleStore:

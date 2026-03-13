@@ -33,8 +33,9 @@ The MCP server reads configuration from environment variables:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CAPSULE_LLM_MODEL` | (empty) | Optional. litellm model string for server-side extraction (e.g. `gpt-4o-mini`). Not needed if the host LLM provides facts/summary via `capsule_seal`. |
-| `CAPSULE_STORAGE_PATH` | `~/.capsules` | Storage directory path |
+| `CAPSULE_STORAGE_PATH` | `~/.capsules` | Storage directory path (shared by CLI, MCP, and REST) |
 | `CAPSULE_STORAGE_TYPE` | `local` | Storage backend: `local`, `sqlite`, `redis`, `qdrant` |
+| `CAPSULE_DEFAULT_USER` | `default` | Default user_id when not explicitly specified in tool calls |
 | `CAPSULE_COMPRESS_THRESHOLD` | `8000` | Buffer token threshold before L1 compression triggers |
 | `CAPSULE_COMPRESS_LAYER_MAX` | `6000` | Max tokens per compression layer before cascade |
 | `CAPSULE_SKILL_LLM_SCORE` | `false` | Enable LLM scoring for skill trigger quality |
@@ -55,12 +56,16 @@ Create a `.mcp.json` file in your project root (project-level), or use the CLI c
       "command": "capsule-memory-mcp",
       "env": {
         "CAPSULE_LLM_MODEL": "gpt-4o-mini",
-        "OPENAI_API_KEY": "sk-..."
+        "OPENAI_API_KEY": "sk-...",
+        "CAPSULE_STORAGE_PATH": "~/.capsules",
+        "CAPSULE_DEFAULT_USER": "default"
       }
     }
   }
 }
 ```
+
+> **Tip:** `CAPSULE_STORAGE_PATH` and `CAPSULE_DEFAULT_USER` are optional — the values shown above are the defaults. Override them here if you want capsules stored elsewhere or a different default user identity.
 
 ### Option B: With conda environment (recommended for conda users)
 

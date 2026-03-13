@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 _active_sessions: dict[str, Any] = {}
 _cm: Any = None
 _pending_trigger_events: dict[str, Any] = {}
+_default_user: str = os.getenv("CAPSULE_DEFAULT_USER", "default")
 
 
 def get_cm() -> Any:
@@ -147,7 +148,7 @@ def _build_server() -> "Server":
             raise ValueError(f"Unknown prompt: {name}")
         args = arguments or {}
         topic = args.get("topic", "")
-        user_id = args.get("user_id", "default")
+        user_id = args.get("user_id") or _default_user
         cm = get_cm()
         result = await cm.recall(topic, user_id=user_id, top_k=3)
         context_text = result.get("prompt_injection", "")
@@ -182,7 +183,8 @@ def _build_server() -> "Server":
                              "properties": {
                                  "user_message": {"type": "string", "description": "User message"},
                                  "assistant_response": {"type": "string", "description": "AI response"},
-                                 "user_id": {"type": "string", "default": "default", "description": "User ID"},
+                                 "user_id": {"type": "string", "default": _default_user,
+                                             "description": "User ID (defaults to CAPSULE_DEFAULT_USER env var, or 'default')"},
                                  "session_id": {"type": "string", "description": "Session ID (optional)"},
                              }},
             ),
@@ -196,7 +198,7 @@ def _build_server() -> "Server":
                     "conversation and pass them in the 'facts' and 'summary' fields."
                 ),
                 inputSchema={"type": "object", "properties": {
-                    "user_id": {"type": "string", "default": "default"},
+                    "user_id": {"type": "string", "default": _default_user},
                     "title": {"type": "string", "description": "Capsule title"},
                     "tags": {"type": "array", "items": {"type": "string"},
                              "description": "Tag list"},
@@ -224,7 +226,7 @@ def _build_server() -> "Server":
                 inputSchema={"type": "object", "required": ["query"],
                              "properties": {
                                  "query": {"type": "string", "description": "Topic or question"},
-                                 "user_id": {"type": "string", "default": "default"},
+                                 "user_id": {"type": "string", "default": _default_user},
                                  "top_k": {"type": "integer", "default": 3, "minimum": 1, "maximum": 10},
                                  "include_skills": {"type": "boolean", "default": True},
                              }},
@@ -235,14 +237,14 @@ def _build_server() -> "Server":
                 inputSchema={"type": "object", "required": ["query"],
                              "properties": {
                                  "query": {"type": "string"},
-                                 "user_id": {"type": "string", "default": "default"},
+                                 "user_id": {"type": "string", "default": _default_user},
                              }},
             ),
             types.Tool(
                 name="capsule_list",
                 description="List user's historical capsules.",
                 inputSchema={"type": "object", "properties": {
-                    "user_id": {"type": "string", "default": "default"},
+                    "user_id": {"type": "string", "default": _default_user},
                     "capsule_type": {"type": "string", "enum": ["memory", "skill", "hybrid", "context"]},
                     "tags": {"type": "array", "items": {"type": "string"}},
                     "limit": {"type": "integer", "default": 20, "minimum": 1, "maximum": 100},
@@ -268,7 +270,7 @@ def _build_server() -> "Server":
                 inputSchema={"type": "object", "required": ["file_path"],
                              "properties": {
                                  "file_path": {"type": "string"},
-                                 "user_id": {"type": "string", "default": "default"},
+                                 "user_id": {"type": "string", "default": _default_user},
                                  "passphrase": {"type": "string", "default": ""},
                              }},
             ),
@@ -276,7 +278,7 @@ def _build_server() -> "Server":
                 name="capsule_pending_triggers",
                 description="View pending skill trigger events awaiting user confirmation.",
                 inputSchema={"type": "object", "properties": {
-                    "user_id": {"type": "string", "default": "default"},
+                    "user_id": {"type": "string", "default": _default_user},
                 }},
             ),
             types.Tool(
@@ -288,7 +290,7 @@ def _build_server() -> "Server":
                                  "resolution": {"type": "string",
                                                 "enum": ["extract_skill", "merge_memory",
                                                          "extract_hybrid", "ignore", "never"]},
-                                 "user_id": {"type": "string", "default": "default"},
+                                 "user_id": {"type": "string", "default": _default_user},
                              }},
             ),
             types.Tool(
@@ -300,7 +302,7 @@ def _build_server() -> "Server":
                                                        "description": "Skill description including purpose, trigger, and method"},
                                  "skill_name": {"type": "string", "description": "Skill name (optional)"},
                                  "tags": {"type": "array", "items": {"type": "string"}},
-                                 "user_id": {"type": "string", "default": "default"},
+                                 "user_id": {"type": "string", "default": _default_user},
                              }},
             ),
         ]
@@ -309,7 +311,7 @@ def _build_server() -> "Server":
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
         from capsule_memory.exceptions import CapsuleNotFoundError
         cm = get_cm()
-        user_id = arguments.get("user_id", "default")
+        user_id = arguments.get("user_id") or _default_user
 
         try:
             if name == "capsule_ingest":
@@ -386,7 +388,7 @@ def _build_server() -> "Server":
                 }
                 if not pre_extracted and not cm._config.llm_model:
                     result["hint"] = (
-                        "Tip: pass 'facts' and 'summary' in capsule_seal to use "
+                        "Tip: pass 'facts' and 'summary' in capsule_seal to use"
                         "your own extraction — no server LLM config needed."
                     )
                 return [types.TextContent(type="text", text=json.dumps(result))]
