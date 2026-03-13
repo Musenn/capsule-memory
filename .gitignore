@@ -31,6 +31,7 @@ htmlcov/
 # Environment
 .env
 .env.*
+!.env.example
 
 # CapsuleMemory
 .capsules/

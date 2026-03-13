@@ -13,7 +13,9 @@ from capsule_memory.models.memory import ConversationTurn
 
 if TYPE_CHECKING:
     from capsule_memory.core.extractor import MemoryExtractor
+    from capsule_memory.core.memory_compressor import MemoryCompressor
     from capsule_memory.core.skill_detector import SkillDetector
+    from capsule_memory.core.skill_refiner import SkillRefiner
     from capsule_memory.notifier.base import BaseNotifier
     from capsule_memory.storage.base import BaseStorage
 
@@ -58,6 +60,8 @@ class SessionTracker:
         extractor: MemoryExtractor,
         skill_detector: SkillDetector,
         notifier: BaseNotifier,
+        skill_refiner: SkillRefiner | None = None,
+        compressor: MemoryCompressor | None = None,
     ) -> None:
         self.config = config
         self.state = SessionState(config=config)
@@ -65,6 +69,8 @@ class SessionTracker:
         self.extractor: MemoryExtractor = extractor
         self.skill_detector: SkillDetector = skill_detector
         self.notifier: BaseNotifier = notifier
+        self.skill_refiner: SkillRefiner | None = skill_refiner
+        self.compressor: MemoryCompressor | None = compressor
         self._background_tasks: set[asyncio.Task[None]] = set()
 
     async def ingest(
@@ -109,12 +115,21 @@ class SessionTracker:
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
 
+        if self.compressor is not None:
+            ct = asyncio.create_task(
+                self._compress_background([user_turn, assistant_turn])
+            )
+            self._background_tasks.add(ct)
+            ct.add_done_callback(self._background_tasks.discard)
+
         return user_turn
 
     async def _detect_skill_background(self, turn: ConversationTurn) -> None:
         """Run skill detection in background, never raises to caller."""
         try:
-            event = await self.skill_detector.check(turn, self.state.turns)
+            event = await self.skill_detector.check(
+                turn, self.state.turns, session_id=self.config.session_id
+            )
             if event is None:
                 return
             if event.trigger_rule.value in self.state.never_trigger_patterns:
@@ -123,6 +138,14 @@ class SessionTracker:
             await self.notifier.notify(event)
         except Exception as e:
             logger.warning("Background skill detection failed: %s", e)
+
+    async def _compress_background(self, turns: list[ConversationTurn]) -> None:
+        """Run incremental memory compression in background."""
+        try:
+            if self.compressor is not None:
+                await self.compressor.ingest(turns)
+        except Exception as e:
+            logger.warning("Background compression failed: %s", e)
 
     async def snapshot(self) -> dict[str, Any]:
         """
@@ -147,6 +170,7 @@ class SessionTracker:
         title: str = "",
         tags: list[str] | None = None,
         capsule_type: CapsuleType = CapsuleType.HYBRID,
+        pre_extracted: "MemoryPayload | None" = None,
     ) -> Capsule:
         """
         Seal the current session into a capsule.
@@ -155,6 +179,8 @@ class SessionTracker:
             title: Capsule title.
             tags: Tags for the capsule.
             capsule_type: Type of capsule to create.
+            pre_extracted: Pre-extracted MemoryPayload from the host LLM.
+                If provided, skips the built-in extraction entirely.
 
         Returns:
             The sealed Capsule.
@@ -168,7 +194,25 @@ class SessionTracker:
         if self._background_tasks:
             await asyncio.wait(self._background_tasks, timeout=4.7)
 
-        memory_payload = await self.extractor.extract(self.state.turns)
+        if pre_extracted is not None:
+            memory_payload = pre_extracted
+            # Always fill entities and timeline from turns
+            if not memory_payload.entities:
+                memory_payload.entities = self.extractor._extract_entities_regex(
+                    self.state.turns
+                )
+            if not memory_payload.timeline:
+                memory_payload.timeline = self.extractor._build_timeline(
+                    self.state.turns
+                )
+        elif self.compressor is not None:
+            memory_payload = await self.compressor.finalize()
+            memory_payload.entities = self.extractor._extract_entities_regex(
+                self.state.turns
+            )
+            memory_payload.timeline = self.extractor._build_timeline(self.state.turns)
+        else:
+            memory_payload = await self.extractor.extract(self.state.turns)
 
         if self.state.extra_context:
             memory_payload.context_summary += "\n" + self.state.extra_context
@@ -282,10 +326,15 @@ class SessionTracker:
         event.resolution = resolution  # type: ignore[assignment]
 
         if resolution in ("extract_skill", "extract_hybrid"):
-            from capsule_memory.core.builder import CapsuleBuilder
-            skill_payload = CapsuleBuilder.build_skill_from_draft(
-                self.config, event.skill_draft, self.state.turns
-            )
+            if self.skill_refiner is not None:
+                skill_payload = await self.skill_refiner.refine(
+                    event.skill_draft, self.state.turns, self.config.session_id
+                )
+            else:
+                from capsule_memory.core.builder import CapsuleBuilder
+                skill_payload = CapsuleBuilder.build_skill_from_draft(
+                    self.config, event.skill_draft, self.state.turns
+                )
             self.state.confirmed_skill_payloads.append(skill_payload.model_dump())
             return None
         elif resolution == "merge_memory":

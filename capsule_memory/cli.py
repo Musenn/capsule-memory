@@ -2,6 +2,8 @@
 CapsuleMemory CLI — full-featured command-line interface using typer + rich.
 
 Commands:
+    capsule ingest    — Ingest a conversation turn into a session
+    capsule seal      — Seal a session into a persistent capsule
     capsule list      — List capsules with rich table output
     capsule show      — Show full capsule details
     capsule export    — Export capsule to file
@@ -65,13 +67,81 @@ def _get_cm() -> "CapsuleMemory":
     """Create a CapsuleMemory instance with current settings."""
     from capsule_memory.api import CapsuleMemory, CapsuleMemoryConfig
 
-    config = CapsuleMemoryConfig(storage_path=_storage_path)
+    config = CapsuleMemoryConfig.from_env()
+    config.storage_path = _storage_path
     return CapsuleMemory(config=config, on_skill_trigger=lambda e: None)
 
 
 def _run(coro: Any) -> Any:
     """Run an async coroutine from sync context."""
     return asyncio.run(coro)
+
+
+# ─── In-memory session state for CLI workflow ─────────────────────────────────
+_cli_sessions: dict[str, Any] = {}  # session_id → SessionTracker
+
+
+def _get_or_create_cli_session(
+    cm: "CapsuleMemory", session_id: str, user_id: str
+) -> Any:
+    """Get or create a SessionTracker for CLI ingest/seal workflow."""
+    if session_id in _cli_sessions and _cli_sessions[session_id].state.is_active:
+        return _cli_sessions[session_id]
+    ctx = cm.session(user_id=user_id, session_id=session_id)
+    tracker = ctx._tracker
+    tracker.config.auto_seal_on_exit = False
+    _cli_sessions[session_id] = tracker
+    return tracker
+
+
+# ─── ingest ────────────────────────────────────────────────────────────────
+
+@app.command("ingest")
+def ingest(
+    user_message: str = typer.Argument(..., help="User message text"),
+    assistant_response: str = typer.Argument(..., help="Assistant response text"),
+    session: str = typer.Option("cli_session", "--session", "-s", help="Session ID"),
+    user: Optional[str] = typer.Option(None, "--user", "-u", help="User ID"),
+) -> None:
+    """Ingest a conversation turn into a session."""
+    cm = _get_cm()
+    user_id = user or _default_user
+    tracker = _get_or_create_cli_session(cm, session, user_id)
+    turn = _run(tracker.ingest(user_message, assistant_response))
+    console.print(
+        f"[green]Ingested turn {turn.turn_id}[/green] into session [cyan]{session}[/cyan] "
+        f"({len(tracker.state.turns)} total turns)"
+    )
+
+
+# ─── seal ──────────────────────────────────────────────────────────────────
+
+@app.command("seal")
+def seal(
+    session: str = typer.Option("cli_session", "--session", "-s", help="Session ID to seal"),
+    title: str = typer.Option("", "--title", "-t", help="Capsule title"),
+    tag: Optional[str] = typer.Option(None, "--tag", help="Tag (repeatable via comma-separated)"),
+) -> None:
+    """Seal a session into a persistent memory capsule."""
+    if session not in _cli_sessions:
+        console.print(f"[red]No active session '{session}'. Ingest turns first.[/red]")
+        raise typer.Exit(1)
+
+    tracker = _cli_sessions[session]
+    if not tracker.state.is_active:
+        console.print(f"[red]Session '{session}' is already sealed.[/red]")
+        raise typer.Exit(1)
+
+    tags = [t.strip() for t in tag.split(",")] if tag else []
+    capsule = _run(tracker.seal(title=title, tags=tags))
+    del _cli_sessions[session]
+
+    console.print(f"[green]Sealed![/green] Capsule [cyan]{capsule.capsule_id[:16]}[/cyan]")
+    console.print(
+        f"[dim]Type: {capsule.capsule_type.value} | "
+        f"Turns: {capsule.metadata.turn_count} | "
+        f"Title: {capsule.metadata.title or '(untitled)'}[/dim]"
+    )
 
 
 # ─── list ───────────────────────────────────────────────────────────────────
@@ -371,7 +441,9 @@ def mcp(
 
     if storage:
         os.environ["CAPSULE_STORAGE_PATH"] = storage
-    console.print("[bold]Starting MCP Server...[/bold]")
+    # Do NOT print to stdout — MCP uses stdout for JSON-RPC protocol.
+    import sys
+    print("Starting MCP Server...", file=sys.stderr)
     mcp_main()
 
 

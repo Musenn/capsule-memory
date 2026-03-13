@@ -25,10 +25,10 @@ CapsuleMemory is released under the Apache-2.0 License. When using this library:
 ## Verifying Capsule Integrity
 
 ```python
-from capsule_memory.models import Capsule
+from capsule_memory.transport.schema_validator import verify_checksum
 
-capsule = ...  # loaded from storage or file
-is_valid = capsule.verify_checksum()
+capsule_dict = capsule.model_dump()  # or loaded from JSON file
+is_valid = verify_checksum(capsule_dict)
 ```
 
-The `verify_checksum()` method recomputes the checksum and compares it against the stored value.
+The `verify_checksum()` function recomputes the HMAC-SHA256 checksum from the capsule dict and compares it against the stored value.

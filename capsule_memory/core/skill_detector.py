@@ -188,6 +188,7 @@ class SkillDetector:
         self,
         turn: ConversationTurn,
         session_turns: list[ConversationTurn],
+        session_id: str = "",
     ) -> SkillTriggerEvent | None:
         """
         Run rules in priority order sequentially, return on first hit (short-circuit).
@@ -226,7 +227,7 @@ class SkillDetector:
             draft.confidence = min(draft.confidence + score * 0.2, 1.0)
 
         return SkillTriggerEvent(
-            session_id=f"sess_{turn.turn_id}",
+            session_id=session_id or f"sess_{turn.turn_id}",
             trigger_rule=draft.trigger_rule,
             skill_draft=draft,
         )

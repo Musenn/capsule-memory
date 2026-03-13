@@ -75,12 +75,39 @@ def init_capsule_memory(
     )
 
 
+async def _auto_seal_active_sessions() -> None:
+    """Auto-seal all active sessions to prevent data loss."""
+    if not _active_sessions:
+        return
+    logger.info("Auto-sealing %d active session(s) on shutdown...", len(_active_sessions))
+    for session_id, tracker in list(_active_sessions.items()):
+        if tracker.state.is_active and len(tracker.state.turns) > 0:
+            try:
+                capsule = await tracker.seal(title="(auto-sealed on shutdown)")
+                logger.info(
+                    "Auto-sealed session %s -> capsule=%s (%d turns)",
+                    session_id, capsule.capsule_id[:12], capsule.metadata.turn_count,
+                )
+            except Exception as e:
+                logger.warning("Auto-seal failed for session %s: %s", session_id, e)
+    _active_sessions.clear()
+
+
 def _build_app() -> FastAPI:
     """Build and configure the FastAPI application."""
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):  # type: ignore[no-untyped-def]
+        yield
+        await _auto_seal_active_sessions()
+
+    from capsule_memory import __version__
     app = FastAPI(
         title="CapsuleMemory API",
         description="User-sovereign AI memory capsule system with skill extraction",
-        version="0.1.0",
+        version=__version__,
+        lifespan=lifespan,
     )
 
     # CORS configuration — default blocks all cross-origin requests;
@@ -128,12 +155,27 @@ def _build_app() -> FastAPI:
         notifier = CallbackNotifier(
             lambda evt: logger.info("Trigger event: %s", evt.event_id)
         )
+        from capsule_memory.core.memory_compressor import (
+            MemoryCompressor, CompressorConfig,
+        )
+        compressor = (
+            MemoryCompressor(
+                model=cm._config.llm_model,
+                config=CompressorConfig(
+                    compress_threshold=cm._config.compress_threshold,
+                    max_layer_tokens=cm._config.compress_layer_max,
+                ),
+            )
+            if cm._config.llm_model else None
+        )
         tracker = SessionTracker(
             config=config,
             storage=cm._storage,
             extractor=cm._extractor,
             skill_detector=cm._skill_detector,
             notifier=notifier,
+            skill_refiner=cm._skill_refiner,
+            compressor=compressor,
         )
         _active_sessions[session_id] = tracker
         return tracker
@@ -175,12 +217,16 @@ def _build_app() -> FastAPI:
         """
         Ingest a user-assistant conversation turn into an active session.
 
+        On the first turn of a new session, automatically recalls relevant
+        historical context and includes it in the response.
+
         Args:
             session_id: The session to ingest into.
             body: Must contain user_message, assistant_response. Optional: user_id.
 
         Returns:
             Dict with turn_id, session_id, total_turns, pending_triggers.
+            On first turn: also recalled_context, recalled_facts_count.
         """
         user_id = body.get("user_id", "default")
         user_message = body.get("user_message")
@@ -193,14 +239,33 @@ def _build_app() -> FastAPI:
             )
 
         tracker = _get_or_create_session(session_id, user_id)
+        is_new_session = len(tracker.state.turns) == 0
         turn = await tracker.ingest(user_message, assistant_response)
 
-        return {
+        result: dict[str, Any] = {
             "turn_id": turn.turn_id,
             "session_id": session_id,
             "total_turns": len(tracker.state.turns),
             "pending_triggers": len(tracker.state.pending_triggers),
         }
+
+        # Auto-recall on first turn of a new session
+        if is_new_session:
+            try:
+                cm = _get_cm()
+                recall_result = await cm.recall(
+                    user_message, user_id=user_id, top_k=3
+                )
+                recalled_facts = recall_result.get("facts", [])
+                if recalled_facts:
+                    result["recalled_context"] = recall_result.get(
+                        "prompt_injection", ""
+                    )
+                    result["recalled_facts_count"] = len(recalled_facts)
+            except Exception as e:
+                logger.debug("Auto-recall on first ingest failed: %s", e)
+
+        return result
 
     @app.get(
         "/api/v1/sessions/{session_id}/snapshot",
@@ -242,27 +307,61 @@ def _build_app() -> FastAPI:
 
         Args:
             session_id: The session to seal.
-            body: Optional fields: user_id, title, tags.
+            body: Optional fields: user_id, title, tags, summary, facts.
+                  If facts/summary are provided, they are used directly
+                  (host LLM extraction) instead of server-side extraction.
 
         Returns:
-            Dict with capsule_id, title, turn_count, type.
+            Dict with capsule_id, title, turn_count, type, extraction.
         """
         if session_id not in _active_sessions:
             raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
         tracker = _active_sessions[session_id]
+
+        # Build pre-extracted payload if caller provided facts/summary
+        pre_extracted = None
+        client_facts = body.get("facts")
+        client_summary = body.get("summary")
+        if client_facts or client_summary:
+            from capsule_memory.models.memory import MemoryFact, MemoryPayload
+            facts = []
+            for i, f in enumerate(client_facts or []):
+                facts.append(MemoryFact(
+                    key=f.get("key", f"fact.{i}"),
+                    value=f.get("value", ""),
+                    confidence=float(f.get("confidence", 0.9)),
+                    category=f.get("category", "other"),
+                    source_turn=i,
+                ))
+            pre_extracted = MemoryPayload(
+                facts=facts,
+                context_summary=client_summary or "",
+            )
+
         capsule = await tracker.seal(
             title=body.get("title", ""),
             tags=body.get("tags", []),
+            pre_extracted=pre_extracted,
         )
         del _active_sessions[session_id]
 
-        return {
+        cm = _get_cm()
+        result: dict[str, Any] = {
             "capsule_id": capsule.capsule_id,
             "title": capsule.metadata.title,
             "turn_count": capsule.metadata.turn_count,
             "type": capsule.capsule_type.value,
+            "extraction": "host_llm" if pre_extracted else (
+                "server_llm" if cm._config.llm_model else "rule_based"
+            ),
         }
+        if not pre_extracted and not cm._config.llm_model:
+            result["hint"] = (
+                "Tip: pass 'facts' and 'summary' in seal body to use "
+                "host LLM extraction — no server LLM config needed."
+            )
+        return result
 
     @app.get(
         "/api/v1/sessions/{session_id}/triggers",
@@ -671,7 +770,8 @@ def _build_app() -> FastAPI:
         dependencies=[Depends(verify_token)],
     )
     async def recall_memories(
-        q: str = Query(..., description="Search query"),
+        query: str = Query(None, description="Search query"),
+        q: str = Query(None, description="Search query (alias for 'query', deprecated)"),
         user_id: str = Query(default="default"),
         top_k: int = Query(default=3, ge=1, le=10),
     ) -> dict[str, Any]:
@@ -679,15 +779,21 @@ def _build_app() -> FastAPI:
         Recall relevant memories matching the query.
 
         Args:
-            q: Search query text.
+            query: Search query text.
+            q: Alias for query (deprecated, use 'query' instead).
             user_id: User identifier.
             top_k: Maximum number of capsules to recall.
 
         Returns:
             Full recall structure with facts, skills, summary, prompt_injection, sources.
         """
+        search_query = query or q
+        if not search_query:
+            raise HTTPException(status_code=400, detail="'query' parameter is required")
         cm = _get_cm()
-        recall_result: dict[str, Any] = await cm.recall(q, user_id=user_id, top_k=top_k)
+        recall_result: dict[str, Any] = await cm.recall(
+            search_query, user_id=user_id, top_k=top_k
+        )
         return recall_result
 
     # ─── Health check ──────────────────────────────────────────────────────
@@ -700,7 +806,8 @@ def _build_app() -> FastAPI:
         Returns:
             Dict with status and version.
         """
-        return {"status": "ok", "version": "0.1.0"}
+        from capsule_memory import __version__
+        return {"status": "ok", "version": __version__}
 
     return app
 
@@ -709,8 +816,51 @@ def _build_app() -> FastAPI:
 app: Any = None
 
 
+def create_app(
+    storage_path: str = "~/.capsules",
+    storage_type: str = "local",
+) -> "FastAPI":
+    """
+    Create and return a fully configured FastAPI application.
+
+    Use this to embed CapsuleMemory endpoints in your own FastAPI app,
+    add custom middleware, or mount alongside other routers.
+
+    Args:
+        storage_path: Path to capsule storage directory.
+        storage_type: Storage backend (local, sqlite, redis, qdrant).
+
+    Returns:
+        A FastAPI app instance with all CapsuleMemory endpoints.
+
+    Example::
+
+        from capsule_memory.server.rest_api import create_app
+
+        # Standalone
+        app = create_app(storage_path="./my_capsules")
+
+        # Mount into your own app
+        from fastapi import FastAPI
+        main_app = FastAPI()
+        capsule_app = create_app()
+        main_app.mount("/memory", capsule_app)
+
+        # Add custom middleware
+        app = create_app()
+        app.add_middleware(MyCustomMiddleware)
+    """
+    if not _SERVER_AVAILABLE:
+        raise RuntimeError(
+            "REST API Server requires capsule-memory[server] extras: "
+            "pip install 'capsule-memory[server]'"
+        )
+    init_capsule_memory(storage_path=storage_path, storage_type=storage_type)
+    return _build_app()
+
+
 def _ensure_app() -> Any:
-    """Ensure the FastAPI app is built."""
+    """Ensure the FastAPI app is built (internal)."""
     global app
     if app is None:
         if not _SERVER_AVAILABLE:

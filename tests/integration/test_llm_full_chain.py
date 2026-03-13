@@ -87,7 +87,7 @@ def _make_turns() -> list[ConversationTurn]:
 async def test_extractor_real_llm_returns_valid_payload() -> None:
     """MemoryExtractor with real LLM should return a MemoryPayload with facts and summary."""
     extractor = MemoryExtractor(ExtractorConfig(
-        model=os.getenv("CAPSULE_EXTRACTOR_MODEL", "gpt-4o-mini"),
+        model=os.getenv("CAPSULE_LLM_MODEL", "gpt-4o-mini"),
     ))
     turns = _make_turns()
 
@@ -168,7 +168,7 @@ async def test_full_session_seal_with_real_llm(tmp_path: Path) -> None:
 async def test_extractor_handles_minimal_input() -> None:
     """Extractor should handle very short conversations gracefully."""
     extractor = MemoryExtractor(ExtractorConfig(
-        model=os.getenv("CAPSULE_EXTRACTOR_MODEL", "gpt-4o-mini"),
+        model=os.getenv("CAPSULE_LLM_MODEL", "gpt-4o-mini"),
     ))
     turns = [
         ConversationTurn(turn_id=1, role="user", content="Hi"),

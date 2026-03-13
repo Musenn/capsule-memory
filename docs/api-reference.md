@@ -147,7 +147,11 @@ config = CapsuleMemoryConfig(
     storage_url="",                # For redis/qdrant
     skill_detection=True,
     enable_llm_scorer=False,
-    extractor_model="gpt-4o-mini",
+    llm_model="gpt-4o-mini",      # or any litellm-supported model
+    default_notifier="cli",        # cli | none
+    encrypt_by_default=False,
+    compress_threshold=8000,       # Buffer token threshold before L1 compression
+    compress_layer_max=6000,       # Max tokens per layer before cascade compression
 )
 
 # Or from environment variables

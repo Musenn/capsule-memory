@@ -147,7 +147,11 @@ config = CapsuleMemoryConfig(
     storage_url="",                # redis/qdrant 连接地址
     skill_detection=True,
     enable_llm_scorer=False,
-    extractor_model="gpt-4o-mini",
+    llm_model="gpt-4o-mini",      # 或任何 litellm 支持的模型
+    default_notifier="cli",        # cli | none
+    encrypt_by_default=False,
+    compress_threshold=8000,       # L1 压缩触发的缓冲区 token 阈值
+    compress_layer_max=6000,       # 级联压缩触发的每层最大 token 数
 )
 
 # 或从环境变量加载

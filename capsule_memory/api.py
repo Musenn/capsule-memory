@@ -15,7 +15,9 @@ from capsule_memory.notifier.callback import CallbackNotifier
 from capsule_memory.notifier.cli import CLINotifier
 from capsule_memory.notifier.multi import MultiNotifier
 from capsule_memory.core.extractor import MemoryExtractor, ExtractorConfig
+from capsule_memory.core.memory_compressor import MemoryCompressor, CompressorConfig
 from capsule_memory.core.skill_detector import SkillDetector
+from capsule_memory.core.skill_refiner import SkillRefiner
 from capsule_memory.core.session import SessionConfig, SessionTracker, SessionContextManager
 from capsule_memory.core.store import CapsuleStore
 
@@ -29,9 +31,11 @@ class CapsuleMemoryConfig:
     storage_url: str = ""
     skill_detection: bool = True
     enable_llm_scorer: bool = False
-    extractor_model: str = "gpt-4o-mini"
+    llm_model: str = ""
     default_notifier: Literal["cli", "none"] = "cli"
     encrypt_by_default: bool = False
+    compress_threshold: int = 8000
+    compress_layer_max: int = 6000
 
     @classmethod
     def from_env(cls) -> CapsuleMemoryConfig:
@@ -42,9 +46,11 @@ class CapsuleMemoryConfig:
             storage_url=os.getenv("CAPSULE_STORAGE_URL", ""),
             skill_detection=os.getenv("CAPSULE_SKILL_DETECTION", "true").lower() == "true",
             enable_llm_scorer=os.getenv("CAPSULE_SKILL_LLM_SCORE", "false").lower() == "true",
-            extractor_model=os.getenv("CAPSULE_EXTRACTOR_MODEL", "gpt-4o-mini"),
+            llm_model=os.getenv("CAPSULE_LLM_MODEL", ""),
             default_notifier=os.getenv("CAPSULE_NOTIFIER", "cli"),          # type: ignore[arg-type]
             encrypt_by_default=os.getenv("CAPSULE_ENCRYPT_DEFAULT", "false").lower() == "true",
+            compress_threshold=int(os.getenv("CAPSULE_COMPRESS_THRESHOLD", "8000")),
+            compress_layer_max=int(os.getenv("CAPSULE_COMPRESS_LAYER_MAX", "6000")),
         )
 
 
@@ -92,10 +98,14 @@ class CapsuleMemory:
         self._adapter = adapter or RawAdapter()
         self._storage = storage or _build_storage(self._config)
         self._store = CapsuleStore(self._storage)
-        self._extractor = MemoryExtractor(ExtractorConfig(model=self._config.extractor_model))
+        self._extractor = MemoryExtractor(ExtractorConfig(model=self._config.llm_model))
+        self._skill_refiner = SkillRefiner(model=self._config.llm_model)
         self._skill_detector = SkillDetector(
-            enable_llm_scorer=self._config.enable_llm_scorer
+            enable_llm_scorer=self._config.enable_llm_scorer,
+            llm_model=self._config.llm_model,
         ) if skill_detection and self._config.skill_detection else SkillDetector(rules=[])
+
+        self._managed_sessions: dict[str, SessionTracker] = {}
 
         notifiers: list[BaseNotifier] = []
         if on_skill_trigger is not None:
@@ -124,14 +134,122 @@ class CapsuleMemory:
             auto_seal_on_exit=auto_seal_on_exit,
             include_raw_turns=include_raw_turns,
         )
+        compressor = (
+            MemoryCompressor(
+                model=self._config.llm_model,
+                config=CompressorConfig(
+                    compress_threshold=self._config.compress_threshold,
+                    max_layer_tokens=self._config.compress_layer_max,
+                ),
+            )
+            if self._config.llm_model else None
+        )
         tracker = SessionTracker(
             config=config,
             storage=self._storage,
             extractor=self._extractor,
             skill_detector=self._skill_detector,
             notifier=self._notifier,
+            skill_refiner=self._skill_refiner,
+            compressor=compressor,
         )
         return SessionContextManager(tracker)
+
+    # ─── Managed sessions for remember() ─────────────────────────────────
+
+    async def remember(
+        self,
+        user_message: str,
+        assistant_response: str,
+        user_id: str = "default",
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        One-call passive memory: ingest a turn, auto-recall on first turn.
+
+        Call this once per exchange. It handles session lifecycle automatically:
+        - Creates a session on first call for a user_id
+        - Recalls relevant history on the first turn (returned in result)
+        - Subsequent calls add turns to the same session
+
+        To persist the session, call seal_session() or let the process exit
+        (MCP/REST servers auto-seal on shutdown).
+
+        Args:
+            user_message: The user's message.
+            assistant_response: The AI's response.
+            user_id: User identifier.
+            session_id: Optional session ID (auto-generated if omitted).
+
+        Returns:
+            Dict with turn_id, session_id, total_turns.
+            On first turn: also recalled_context and recalled_facts_count.
+
+        Example::
+
+            cm = CapsuleMemory()
+            result = await cm.remember("I use vim", "Great editor choice!", user_id="alice")
+            if "recalled_context" in result:
+                print("History:", result["recalled_context"])
+        """
+        from capsule_memory.core.session import SessionTracker
+
+        is_new = False
+        if user_id not in self._managed_sessions or not self._managed_sessions[user_id].state.is_active:
+            resolved_sid = session_id or f"sess_{_uuid4().hex[:12]}"
+            ctx = self.session(user_id=user_id, session_id=resolved_sid, auto_seal_on_exit=False)
+            tracker = ctx._tracker
+            self._managed_sessions[user_id] = tracker
+            is_new = True
+
+        tracker = self._managed_sessions[user_id]
+        turn = await tracker.ingest(user_message, assistant_response)
+
+        result: dict[str, Any] = {
+            "turn_id": turn.turn_id,
+            "session_id": tracker.config.session_id,
+            "total_turns": len(tracker.state.turns),
+        }
+
+        if is_new:
+            try:
+                recall_result = await self.recall(user_message, user_id=user_id, top_k=3)
+                recalled_facts = recall_result.get("facts", [])
+                if recalled_facts:
+                    result["recalled_context"] = recall_result.get("prompt_injection", "")
+                    result["recalled_facts_count"] = len(recalled_facts)
+            except Exception:
+                pass
+
+        return result
+
+    async def seal_session(
+        self,
+        user_id: str = "default",
+        title: str = "",
+        tags: list[str] | None = None,
+        pre_extracted: Any = None,
+    ) -> Capsule | None:
+        """
+        Seal the managed session for a user (companion to remember()).
+
+        Args:
+            user_id: User whose session to seal.
+            title: Capsule title.
+            tags: Tags for the capsule.
+            pre_extracted: Optional MemoryPayload with pre-extracted facts/summary.
+
+        Returns:
+            The sealed Capsule, or None if no active session exists.
+        """
+        if user_id not in self._managed_sessions:
+            return None
+        tracker = self._managed_sessions[user_id]
+        if not tracker.state.is_active or len(tracker.state.turns) == 0:
+            return None
+        capsule = await tracker.seal(title=title, tags=tags or [], pre_extracted=pre_extracted)
+        del self._managed_sessions[user_id]
+        return capsule
 
     async def recall(self, query: str, user_id: str, top_k: int = 5) -> dict[str, Any]:
         """Recall historical memories across sessions (no new session required)."""

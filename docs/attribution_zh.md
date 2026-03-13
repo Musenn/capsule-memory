@@ -25,10 +25,10 @@ CapsuleMemory 基于 Apache-2.0 许可证发布。使用本库时：
 ## 验证胶囊完整性
 
 ```python
-from capsule_memory.models import Capsule
+from capsule_memory.transport.schema_validator import verify_checksum
 
-capsule = ...  # 从存储或文件加载
-is_valid = capsule.verify_checksum()
+capsule_dict = capsule.model_dump()  # 或从 JSON 文件加载
+is_valid = verify_checksum(capsule_dict)
 ```
 
-`verify_checksum()` 方法重新计算校验和，并与存储的值进行比较。
+`verify_checksum()` 函数重新计算 HMAC-SHA256 校验和，并与存储的值进行比较。

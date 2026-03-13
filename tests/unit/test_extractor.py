@@ -86,7 +86,7 @@ class TestFormatTurns:
 class TestExtractorConfig:
     def test_defaults(self) -> None:
         config = ExtractorConfig()
-        assert config.model == "gpt-4o-mini"
+        assert config.model == ""
         assert config.max_facts == 40
         assert config.max_turns_for_extraction == 100
         assert config.language == "auto"
@@ -104,7 +104,7 @@ class TestExtractorConfig:
 
 class TestMemoryExtractorMockMode:
     async def test_mock_mode_returns_preset(self) -> None:
-        extractor = MemoryExtractor()
+        extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
         turns = _make_turns(("hello", "world"))
         result = await extractor.extract(turns)
         assert result is MOCK_PAYLOAD
@@ -149,8 +149,8 @@ class TestMemoryExtractorWithMockedLLM:
                     return facts_response
                 return summary_response
 
-            with patch("capsule_memory.core.extractor.litellm.acompletion", side_effect=mock_acompletion):
-                extractor = MemoryExtractor()
+            with patch("litellm.acompletion", side_effect=mock_acompletion):
+                extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
                 turns = _make_turns(("I use Python for everything", "Python is great!"))
                 result = await extractor.extract(turns)
 
@@ -167,7 +167,7 @@ class TestMemoryExtractorWithMockedLLM:
     async def test_extract_empty_turns(self) -> None:
         old_val = os.environ.pop("CAPSULE_MOCK_EXTRACTOR", None)
         try:
-            extractor = MemoryExtractor()
+            extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
             result = await extractor.extract([])
             assert isinstance(result, MemoryPayload)
             assert result.facts == []
@@ -186,8 +186,8 @@ class TestMemoryExtractorWithMockedLLM:
                     choices=[SimpleNamespace(message=SimpleNamespace(content="Summary text"))]
                 )
 
-            with patch("capsule_memory.core.extractor.litellm.acompletion", side_effect=mock_acompletion):
-                extractor = MemoryExtractor()
+            with patch("litellm.acompletion", side_effect=mock_acompletion):
+                extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
                 turns = _make_turns(("hello", "world"))
                 result = await extractor.extract(turns)
 
@@ -214,8 +214,8 @@ class TestMemoryExtractorWithMockedLLM:
                     choices=[SimpleNamespace(message=SimpleNamespace(content="summary"))]
                 )
 
-            with patch("capsule_memory.core.extractor.litellm.acompletion", side_effect=mock_acompletion):
-                extractor = MemoryExtractor()
+            with patch("litellm.acompletion", side_effect=mock_acompletion):
+                extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
                 turns = _make_turns(("q", "a"))
                 result = await extractor.extract(turns)
 
@@ -242,8 +242,8 @@ class TestMemoryExtractorWithMockedLLM:
                     choices=[SimpleNamespace(message=SimpleNamespace(content="sum"))]
                 )
 
-            with patch("capsule_memory.core.extractor.litellm.acompletion", side_effect=mock_acompletion):
-                extractor = MemoryExtractor()
+            with patch("litellm.acompletion", side_effect=mock_acompletion):
+                extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
                 turns = _make_turns(("q", "a"))
                 result = await extractor.extract(turns)
 
@@ -260,7 +260,7 @@ class TestMemoryExtractorWithMockedLLM:
 
 class TestExtractEntitiesRegex:
     def test_detects_languages(self) -> None:
-        extractor = MemoryExtractor()
+        extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
         turns = [_make_turn(1, "user", "I love Python and TypeScript")]
         result = extractor._extract_entities_regex(turns)
         assert "technologies" in result
@@ -268,7 +268,7 @@ class TestExtractEntitiesRegex:
         assert "TypeScript" in result["technologies"]
 
     def test_detects_frameworks(self) -> None:
-        extractor = MemoryExtractor()
+        extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
         turns = [_make_turn(1, "user", "I use FastAPI and React for my project")]
         result = extractor._extract_entities_regex(turns)
         assert "technologies" in result
@@ -276,13 +276,13 @@ class TestExtractEntitiesRegex:
         assert "React" in result["technologies"]
 
     def test_empty_when_no_tech(self) -> None:
-        extractor = MemoryExtractor()
+        extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
         turns = [_make_turn(1, "user", "I like cats and dogs")]
         result = extractor._extract_entities_regex(turns)
         assert result == {}
 
     def test_deduplicates(self) -> None:
-        extractor = MemoryExtractor()
+        extractor = MemoryExtractor(ExtractorConfig(model="test-model"))
         turns = [
             _make_turn(1, "user", "Python Python Python"),
             _make_turn(2, "assistant", "Python is great"),

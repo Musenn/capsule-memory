@@ -5,7 +5,6 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import Any
-import litellm
 from capsule_memory.core.llm_utils import sanitize_llm_json
 from capsule_memory.exceptions import ExtractorError
 from capsule_memory.models.memory import ConversationTurn, MemoryFact, MemoryPayload
@@ -26,7 +25,7 @@ MOCK_PAYLOAD = MemoryPayload(
 
 @dataclass
 class ExtractorConfig:
-    model: str = "gpt-4o-mini"
+    model: str = ""
     max_facts: int = 40
     max_turns_for_extraction: int = 100
     language: str = "auto"
@@ -74,6 +73,13 @@ class MemoryExtractor:
 
         if not turns:
             return MemoryPayload()
+
+        if not self.config.model:
+            logger.warning(
+                "LLM model not configured — using rule-based extraction. "
+                "Set CAPSULE_LLM_MODEL for higher quality results."
+            )
+            return self._extract_without_llm(turns)
 
         turns_text = _format_turns(turns, self.config.max_turns_for_extraction)
 
@@ -125,6 +131,7 @@ Conversation:
 Return only the JSON array, no other text, code block markers, or explanations:"""
 
         try:
+            import litellm
             response = await litellm.acompletion(
                 model=self.config.model,
                 messages=[{"role": "user", "content": prompt}],
@@ -163,6 +170,7 @@ Conversation:
 {turns_text}"""
 
         try:
+            import litellm
             response = await litellm.acompletion(
                 model=self.config.model,
                 messages=[{"role": "user", "content": prompt}],
@@ -222,3 +230,42 @@ Conversation:
             "summary": turns[-1].content[:80],
         })
         return timeline
+
+    def _extract_without_llm(self, turns: list[ConversationTurn]) -> MemoryPayload:
+        """Rule-based extraction fallback when no LLM model is configured.
+
+        Extracts: entities via regex, timeline, basic facts from assistant turns,
+        and a concatenated summary from conversation content.
+        """
+        # Build summary from assistant responses
+        assistant_turns = [t for t in turns if t.role == "assistant"]
+        user_turns = [t for t in turns if t.role == "user"]
+        summary_parts = []
+        if user_turns:
+            summary_parts.append(f"Topics: {'; '.join(t.content[:80] for t in user_turns[:5])}")
+        if assistant_turns:
+            summary_parts.append(
+                "Key responses: " + " ".join(t.content[:200] for t in assistant_turns[:3])
+            )
+        summary = "\n".join(summary_parts)[:1000]
+
+        # Extract basic facts from each Q&A pair
+        facts: list[MemoryFact] = []
+        for i, (u, a) in enumerate(zip(user_turns, assistant_turns)):
+            facts.append(MemoryFact(
+                key=f"conversation.turn_{i+1}",
+                value=f"Q: {u.content[:100]} A: {a.content[:200]}",
+                confidence=0.5,
+                category="other",
+                source_turn=u.turn_id,
+            ))
+            if len(facts) >= self.config.max_facts:
+                break
+
+        return MemoryPayload(
+            facts=facts,
+            context_summary=summary,
+            entities=self._extract_entities_regex(turns),
+            timeline=self._build_timeline(turns),
+            raw_turns=turns if self.config.include_raw_turns else [],
+        )
