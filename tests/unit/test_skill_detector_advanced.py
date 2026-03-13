@@ -1,6 +1,7 @@
 """Advanced tests for capsule_memory/core/skill_detector.py — RepeatPattern, LLM scorer, edge cases."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 
@@ -9,6 +10,7 @@ os.environ["CAPSULE_MOCK_EXTRACTOR"] = "true"
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
 
 from capsule_memory.core.skill_detector import (
     RepeatPatternRule,
@@ -19,6 +21,8 @@ from capsule_memory.core.skill_detector import (
 )
 from capsule_memory.models.events import SkillTriggerRule
 from capsule_memory.models.memory import ConversationTurn
+
+_has_litellm = importlib.util.find_spec("litellm") is not None
 
 
 def _make_turn(turn_id: int, role: str, content: str) -> ConversationTurn:
@@ -224,6 +228,7 @@ class TestLengthSignificanceEdgeCases:
 # SkillDetector — LLM scorer path
 # ═══════════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.skipif(not _has_litellm, reason="litellm not installed")
 class TestLLMScorer:
     async def test_llm_scorer_accepts_high_score(self) -> None:
         """LLM scorer with high score should keep the draft."""

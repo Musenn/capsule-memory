@@ -1,6 +1,7 @@
 """Advanced tests for capsule_memory/storage/local.py — search, msgpack, encrypted export/import."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 
@@ -16,6 +17,8 @@ from capsule_memory.models.capsule import (
 )
 from capsule_memory.storage.local import LocalStorage
 from capsule_memory.exceptions import CapsuleNotFoundError, StorageError, TransportError
+
+_has_cryptography = importlib.util.find_spec("cryptography") is not None
 
 
 def _make_capsule(
@@ -131,6 +134,7 @@ class TestMsgpackFormat:
 # encrypted export/import
 # ═══════════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.skipif(not _has_cryptography, reason="cryptography not installed")
 class TestEncryptedExportImport:
     async def test_export_encrypted_json(self, tmp_path: Path) -> None:
         storage = LocalStorage(path=tmp_path)

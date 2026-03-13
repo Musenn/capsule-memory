@@ -1,6 +1,7 @@
 """Tests for capsule_memory/core/extractor.py — MemoryExtractor."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 
@@ -18,6 +19,8 @@ from capsule_memory.core.extractor import (
     _format_turns,
 )
 from capsule_memory.models.memory import ConversationTurn, MemoryPayload
+
+_has_litellm = importlib.util.find_spec("litellm") is not None
 
 
 @pytest.fixture(autouse=True)
@@ -117,6 +120,7 @@ class TestMemoryExtractorMockMode:
 # MemoryExtractor — with mocked litellm
 # ═══════════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.skipif(not _has_litellm, reason="litellm not installed")
 class TestMemoryExtractorWithMockedLLM:
     async def test_extract_with_llm(self) -> None:
         """Test real extraction path with mocked litellm.acompletion."""

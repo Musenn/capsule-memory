@@ -1,5 +1,6 @@
 """Tests for CapsuleBuilder, Transport (crypto/validator), and CapsuleStore (T1.8-T1.9, includes Patch #2)."""
 from __future__ import annotations
+import importlib.util
 import json
 import pytest
 from datetime import datetime
@@ -18,6 +19,8 @@ from capsule_memory.transport.crypto import CapsuleCrypto
 from capsule_memory.transport.schema_validator import validate_capsule, validate_universal_memory, verify_checksum
 from capsule_memory.storage.local import LocalStorage
 from capsule_memory.exceptions import CapsuleNotFoundError
+
+_has_cryptography = importlib.util.find_spec("cryptography") is not None
 
 
 # ── CapsuleBuilder tests ──
@@ -90,6 +93,7 @@ def test_build_skill_from_draft() -> None:
 
 # ── Transport: Crypto tests ──
 
+@pytest.mark.skipif(not _has_cryptography, reason="cryptography not installed")
 def test_encrypt_decrypt_roundtrip() -> None:
     capsule = Capsule(
         capsule_type=CapsuleType.MEMORY,
@@ -109,6 +113,7 @@ def test_encrypt_decrypt_roundtrip() -> None:
     assert decrypted.payload == original_payload
 
 
+@pytest.mark.skipif(not _has_cryptography, reason="cryptography not installed")
 def test_decrypt_wrong_passphrase_fails() -> None:
     capsule = Capsule(
         capsule_type=CapsuleType.MEMORY,
