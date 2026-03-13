@@ -77,6 +77,7 @@ class CapsuleMemoryLlamaIndexMemory:
         self._auto_recall = auto_recall
         self._messages: list[SimpleChatMessage] = []
         self._session_ctx = cm.session(user_id, session_id=session_id, auto_seal_on_exit=False)
+        self._bg_lock = threading.Lock()
         self._session: SessionTracker | None = None
         self._pending_user_msg: str | None = None
 
@@ -98,8 +99,6 @@ class CapsuleMemoryLlamaIndexMemory:
             loop = None
 
         if loop is not None and loop.is_running():
-            if not hasattr(self, "_bg_lock"):
-                self._bg_lock = threading.Lock()
             with self._bg_lock:
                 if not hasattr(self, "_bg_loop"):
                     self._bg_loop = asyncio.new_event_loop()

@@ -91,6 +91,7 @@ class CapsuleMemoryLangChainMemory:
         self.memory_key = memory_key
         self._auto_recall = auto_recall
         self._initialized = False
+        self._bg_lock = threading.Lock()
 
     def _ensure_session(self) -> SessionTracker:
         """Ensure the session tracker is initialized."""
@@ -110,8 +111,6 @@ class CapsuleMemoryLangChainMemory:
             loop = None
 
         if loop is not None and loop.is_running():
-            if not hasattr(self, "_bg_lock"):
-                self._bg_lock = threading.Lock()
             with self._bg_lock:
                 if not hasattr(self, "_bg_loop"):
                     self._bg_loop = asyncio.new_event_loop()
