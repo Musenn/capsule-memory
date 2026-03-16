@@ -10,6 +10,7 @@ seamlessly embedding them into any AI framework via a portable capsule format.
 [![CI](https://github.com/Musenn/capsule-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/Musenn/capsule-memory/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Musenn/capsule-memory/blob/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/capsule-memory)](https://pypi.org/project/capsule-memory/)
+[![npm](https://img.shields.io/npm/v/@capsule-memory/sdk)](https://www.npmjs.com/package/@capsule-memory/sdk)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 
 **English** | [中文](https://github.com/Musenn/capsule-memory/blob/main/docs/README_zh.md)
@@ -27,11 +28,23 @@ Most AI memory systems persist everything automatically, giving users little con
 - **Portable Capsule Format**: Export to JSON / MessagePack / Universal format. Import into any system, no vendor lock-in.
 - **Framework-agnostic**: Drop-in adapters for LangChain, LlamaIndex, or use via REST API / MCP Server.
 
-## Quick Start
+## Installation
+
+**Python (PyPI)**
 
 ```bash
 pip install capsule-memory
 ```
+
+**TypeScript / JavaScript (npm)**
+
+```bash
+npm install @capsule-memory/sdk
+```
+
+Pre-built packages are also available on the [GitHub Releases](https://github.com/Musenn/capsule-memory/releases) page as direct downloads (`.whl`, `.tar.gz`, `.tgz`).
+
+## Quick Start
 
 ### Passive Memory (one line per exchange)
 
